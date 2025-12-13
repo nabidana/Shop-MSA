@@ -1,0 +1,10 @@
+/my-shop
+  /api-gateway      # Spring Cloud Gateway
+  /user-service     # Spring Boot
+  /product-service  # Spring Boot
+  /order-service    # Spring Boot
+  /k8s              # Kubernetes YAML
+    deployment.yaml
+    service.yaml
+    configmap.yaml
+    ingress.yaml
