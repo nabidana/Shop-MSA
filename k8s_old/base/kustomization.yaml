@@ -1,0 +1,12 @@
+# Kustomization: Kustomize 설정 파일
+# 여러 YAML 파일을 하나로 묶고, 환경별로 다른 설정을 적용할 수 있음
+# Helm의 대안으로, 더 간단하고 Kubernetes 네이티브
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 모든 리소스에 자동으로 적용될 네임스페이스
+namespace: shop-msa
+# 이 Kustomization이 관리하는 리소스 목록
+resources:
+  - namespace.yaml     # Namespace 먼저 생성
+  - configmap.yaml     # 그 다음 ConfigMap
+  - secret.yaml        # 마지막으로 Secret

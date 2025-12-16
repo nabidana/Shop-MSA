@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
+    name: http
+  selector:
+    app: payment-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+data:
+  db.host: "postgres"
+  db.port: "5432"
+  db.name: "paymentdb"
+  # 결제 타임아웃 설정
+  payment.timeout.seconds: "30"
+  # Redis 캐시 TTL 설정
+  redis.cache.ttl.seconds: "300"

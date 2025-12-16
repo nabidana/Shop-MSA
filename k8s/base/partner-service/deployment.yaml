@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+  labels:
+    app: partner-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: partner-service
+  template:
+    metadata:
+      labels:
+        app: partner-service
+        tier: backend
+    spec:
+      containers:
+      - name: partner-service
+        image: partner-service:latest
+        ports:
+        - containerPort: 8084
+          name: http
+          protocol: TCP
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "default"
+        - name: REDIS_HOST
+          value: "redis-sentinel"
+        - name: REDIS_PORT
+          value: "26379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: KAFKA_PARTNER_TOPIC
+          value: "partner-events"
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: partner-service-config
+              key: db.host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: partner-service-config
+              key: db.port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: partner-service-config
+              key: db.name
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: partner-service-secret
+              key: db.username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: partner-service-secret
+              key: db.password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8084
+          initialDelaySeconds: 30
+          periodSeconds: 5

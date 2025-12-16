@@ -1,0 +1,9 @@
+# Namespace: 모든 리소스를 논리적으로 격리하는 컨테이너
+# 개발/스테이징/프로덕션 환경을 분리하거나 팀별로 리소스를 격리할 때 사용
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop-msa # Namespace 이름: 모든 리소스가 이 네임스페이스 안에 생성됨
+  labels:
+    name: shop-msa
+    environment: dev # 환경 구분용 레이블 (dev/staging/prod)

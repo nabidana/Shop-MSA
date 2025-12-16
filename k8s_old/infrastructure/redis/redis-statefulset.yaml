@@ -1,0 +1,116 @@
+# Redis StatefulSet: Master-Replica 구조
+# redis-0: Master (읽기/쓰기)
+# redis-1, redis-2: Replica (읽기 전용, Master 장애 시 승격 가능)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: shop-msa
+spec:
+  serviceName: redis-headless  # Headless Service (각 Pod DNS 제공)
+  replicas: 3  # Master 1 + Replica 2
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      # Init Container: Redis 설정 파일 준비
+      initContainers:
+      - name: config
+        # image: redis:7.2.7-alpine3.22 # 가장 보편화된 안정적인 버전
+        image : redis:8.4.0-alpine3.22 # 최신버전
+        command:
+        - sh
+        - -c
+        - |
+          # Pod 순번 추출 (redis-0, redis-1, redis-2)
+          ORDINAL=${HOSTNAME##*-}
+          
+          # redis-0은 Master, 나머지는 Replica
+          if [ "$ORDINAL" = "0" ]; then
+            # Master 설정
+            cat > /etc/redis/redis.conf <<EOF
+          bind 0.0.0.0
+          protected-mode no
+          port 6379
+          dir /data
+          appendonly yes
+          appendfilename "appendonly.aof"
+          # Sentinel을 위한 설정
+          replica-announce-ip redis-$ORDINAL.redis-headless.payment-msa.svc.cluster.local
+          replica-announce-port 6379
+          EOF
+          else
+            # Replica 설정
+            cat > /etc/redis/redis.conf <<EOF
+          bind 0.0.0.0
+          protected-mode no
+          port 6379
+          dir /data
+          appendonly yes
+          appendfilename "appendonly.aof"
+          # Master에 연결
+          replicaof redis-0.redis-headless.payment-msa.svc.cluster.local 6379
+          replica-announce-ip redis-$ORDINAL.redis-headless.payment-msa.svc.cluster.local
+          replica-announce-port 6379
+          EOF
+          fi
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis
+      
+      containers:
+      - name: redis
+        image : redis:8.4.0-alpine3.22
+        ports:
+        - containerPort: 6379
+          name: redis
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis
+        # Liveness Probe: Redis가 응답하는지 확인
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        # Readiness Probe: 복제 준비 완료 확인
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+      
+      volumes:
+      - name: redis-config
+        emptyDir: {}
+  
+  # VolumeClaimTemplate: 각 Pod마다 독립적인 PVC
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi  # 각 Redis 인스턴스당 1GB

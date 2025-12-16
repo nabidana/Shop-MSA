@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payment-prod
+  labels:
+    environment: production
+    project: payment-system

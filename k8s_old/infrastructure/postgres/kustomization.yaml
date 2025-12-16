@@ -1,0 +1,10 @@
+# Kustomization: PostgreSQL 관련 리소스를 하나로 묶음
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: shop-msa
+
+resources:
+  - statefulset.yaml  # StatefulSet 먼저
+  - service.yaml      # 그 다음 Service
+  - pvc.yaml          # 마지막으로 초기화 ConfigMap

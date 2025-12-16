@@ -1,0 +1,11 @@
+# Redis + Sentinel 전체 리소스
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: shop-msa
+
+resources:
+  - redis-statefulset.yaml      # Redis Master + Replica
+  - redis-service.yaml           # Redis Service
+  - sentinel-statefulset.yaml    # Sentinel 모니터링
+  - sentinel-service.yaml        # Sentinel Service

@@ -1,0 +1,43 @@
+# 개발 환경에서는 리소스를 줄임
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1  # 개발 환경에서는 1개만
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  replicas: 1  # 운영과 달리 개발은 1개
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-service
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+spec:
+  replicas: 1

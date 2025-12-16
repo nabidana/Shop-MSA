@@ -1,0 +1,71 @@
+# StatefulSet: 상태를 유지하는 애플리케이션을 위한 워크로드
+# Deployment와 달리 Pod 이름이 고정되고, 영구 스토리지가 자동으로 연결됨
+# Database, Kafka, Zookeeper처럼 상태 저장이 필요한 경우 사용
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: shop-msa
+spec:
+  # StatefulSet은 자신의 Service가 필요 (Headless Service)
+  serviceName: postgres-service  # Pod 간 네트워크 통신을 위한 Service
+  replicas: 1  # PostgreSQL은 단일 인스턴스 (고가용성은 별도 설정 필요)
+  selector:
+    matchLabels:
+      app: postgres  # 이 레이블을 가진 Pod만 관리
+  template:
+    metadata:
+      labels:
+        app: postgres  # Pod에 붙는 레이블
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16.11-bookworm # Non-Alpine 버전 - 모든 확장 설치 및 디버깅 검색 자료 많음
+        #image: postgres:15-alpine  # Alpine 버전은 용량이 작음 (~238MB vs ~376MB)
+        ports:
+        - containerPort: 5432
+          name: postgres  # 포트에 이름 부여 (Service에서 참조 가능)
+        env:
+        # 환경변수: Secret에서 값을 가져옴
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: common-secret      # Secret 이름
+              key: DB_PASSWORD         # Secret의 특정 키
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: common-secret
+              key: DB_USERNAME
+        # 여러 데이터베이스를 자동으로 생성 (초기화 스크립트에서 사용)
+        - name: POSTGRES_MULTIPLE_DATABASES
+          value: "userdb,paymentdb,settlementdb,partnerdb,accountingdb"
+        volumeMounts:
+        # PostgreSQL 데이터 저장 경로
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        # 초기화 스크립트 마운트 (컨테이너 시작 시 자동 실행)
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d  # PostgreSQL이 자동으로 실행하는 경로
+        resources:
+          requests:  # 최소 요구사항 (스케줄링 시 참고)
+            memory: "256Mi"
+            cpu: "250m"
+          limits:    # 최대 사용량 (초과 시 Pod 재시작)
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      # ConfigMap을 Volume으로 마운트
+      - name: init-script
+        configMap:
+          name: postgres-init  # 초기화 SQL 스크립트가 담긴 ConfigMap
+  # VolumeClaimTemplate: StatefulSet 전용 PVC 자동 생성
+  # 각 Pod마다 독립적인 PVC가 생성됨 (postgres-storage-postgres-0)
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]  # 단일 노드에서만 읽기/쓰기 가능
+      resources:
+        requests:
+          storage: 5Gi  # 요청할 스토리지 크기 (Minikube는 hostPath 사용)

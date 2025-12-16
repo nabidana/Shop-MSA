@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 네임스페이스 (환경별로 오버라이드)
+namespace: default
+
+# 모든 Base 리소스 포함
+resources:
+  - api-gateway
+  - user-service
+  - payment-service
+  - settlement-service
+  - partner-service
+  - accounting-service
+  - redis
+  - kafka
+
+# 공통 레이블 추가
+commonLabels:
+  project: payment-system
+  managed-by: kustomize
+
+# 공통 어노테이션
+commonAnnotations:
+  description: "Microservices Payment System"

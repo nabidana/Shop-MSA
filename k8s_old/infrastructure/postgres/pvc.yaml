@@ -1,0 +1,31 @@
+# ConfigMap: 데이터베이스 초기화 스크립트
+# PostgreSQL 컨테이너는 /docker-entrypoint-initdb.d/ 경로의 .sh, .sql 파일을 자동 실행
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: shop-msa
+data:
+  # 초기화 스크립트 (bash)
+  init-db.sh: |
+    #!/bin/bash
+    set -e  # 에러 발생 시 즉시 중단
+    
+    # psql 명령어로 데이터베이스 생성
+    # -v ON_ERROR_STOP=1: 에러 발생 시 중단
+    # <<-EOSQL: Here Document (여러 줄 SQL 입력)
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        -- 각 마이크로서비스별 데이터베이스 생성
+        CREATE DATABASE userdb;        -- User Service용
+        CREATE DATABASE paymentdb;     -- Payment Service용
+        CREATE DATABASE settlementdb;  -- Settlement Service용
+        CREATE DATABASE partnerdb;     -- Partner Service용
+        CREATE DATABASE accountingdb;  -- Accounting Service용
+        
+        -- 각 데이터베이스에 대한 권한 부여
+        GRANT ALL PRIVILEGES ON DATABASE userdb TO $POSTGRES_USER;
+        GRANT ALL PRIVILEGES ON DATABASE paymentdb TO $POSTGRES_USER;
+        GRANT ALL PRIVILEGES ON DATABASE settlementdb TO $POSTGRES_USER;
+        GRANT ALL PRIVILEGES ON DATABASE partnerdb TO $POSTGRES_USER;
+        GRANT ALL PRIVILEGES ON DATABASE accountingdb TO $POSTGRES_USER;
+    EOSQL

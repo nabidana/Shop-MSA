@@ -1,0 +1,26 @@
+# 개발 환경 Kafka 구성 조정
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  replicas: 1  # 개발에서는 단일 브로커
+  template:
+    spec:
+      containers:
+      - name: kafka
+        env:
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: "1"  # 단일 브로커이므로 1
+        - name: KAFKA_MIN_INSYNC_REPLICAS
+          value: "1"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "1"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+spec:
+  replicas: 1  # 개발에서는 단일 Zookeeper

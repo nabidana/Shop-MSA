@@ -1,0 +1,109 @@
+# 운영 환경 고가용성 및 리소스 설정
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 3  # 운영에서는 최소 3개
+  template:
+    spec:
+      containers:
+      - name: api-gateway
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: user-service
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  replicas: 5  # 중요 서비스는 더 많은 레플리카
+  template:
+    spec:
+      containers:
+      - name: payment-service
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: settlement-service
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: partner-service
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: accounting-service
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"

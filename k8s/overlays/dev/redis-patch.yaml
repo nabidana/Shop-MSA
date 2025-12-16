@@ -1,0 +1,55 @@
+# 개발 환경 Redis Sentinel 구성 조정
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-slave
+spec:
+  replicas: 1  # 개발에서는 slave 1개만
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+spec:
+  replicas: 3  # Sentinel은 최소 3개 유지 (쿼럼)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  master.conf: |
+    bind 0.0.0.0
+    port 6379
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    requirepass dev_redis_pass
+  
+  slave.conf: |
+    bind 0.0.0.0
+    port 6379
+    slaveof redis-master 6379
+    masterauth dev_redis_pass
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    requirepass dev_redis_pass
+  
+  sentinel.conf: |
+    bind 0.0.0.0
+    port 26379
+    sentinel monitor mymaster redis-master 6379 2
+    sentinel auth-pass mymaster dev_redis_pass
+    sentinel down-after-milliseconds mymaster 5000
+    sentinel parallel-syncs mymaster 1
+    sentinel failover-timeout mymaster 10000

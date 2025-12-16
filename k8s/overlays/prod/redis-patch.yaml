@@ -1,0 +1,110 @@
+# 운영 환경 Redis Sentinel 구성 (고가용성)
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-master
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi  # 운영 환경 더 큰 스토리지
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-slave
+spec:
+  replicas: 2  # 운영에서는 slave 2개
+  template:
+    spec:
+      containers:
+      - name: redis
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+spec:
+  replicas: 3  # Sentinel 3개 유지
+  template:
+    spec:
+      containers:
+      - name: sentinel
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  master.conf: |
+    bind 0.0.0.0
+    port 6379
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+    maxmemory 1gb
+    maxmemory-policy allkeys-lru
+    requirepass STRONG_PROD_PASSWORD_CHANGE_THIS
+  
+  slave.conf: |
+    bind 0.0.0.0
+    port 6379
+    slaveof redis-master 6379
+    masterauth STRONG_PROD_PASSWORD_CHANGE_THIS
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfsync everysec
+    maxmemory 1gb
+    maxmemory-policy allkeys-lru
+    requirepass STRONG_PROD_PASSWORD_CHANGE_THIS
+  
+  sentinel.conf: |
+    bind 0.0.0.0
+    port 26379
+    sentinel monitor mymaster redis-master 6379 2
+    sentinel auth-pass mymaster STRONG_PROD_PASSWORD_CHANGE_THIS
+    sentinel down-after-milliseconds mymaster 3000
+    sentinel parallel-syncs mymaster 1
+    sentinel failover-timeout mymaster 10000

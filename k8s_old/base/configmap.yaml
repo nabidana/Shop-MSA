@@ -1,0 +1,21 @@
+# ConfigMap: 애플리케이션 설정을 Key-Value 형태로 저장
+# 환경변수나 설정 파일을 Pod에 주입할 때 사용
+# Secret과 달리 민감하지 않은 정보를 저장 (base64 인코딩 없음)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-config
+  namespace: shop-msa
+data:
+  # 공통 설정 - 모든 서비스에서 공유
+  TZ: "Asia/Seoul"           # 타임존 설정
+  LOG_LEVEL: "INFO"          # 로그 레벨 (DEBUG/INFO/WARN/ERROR)
+  # Redis 설정 - 캐시 및 세션 저장소
+  REDIS_HOST: "redis-service"     # Service 이름으로 접근 (DNS)
+  REDIS_PORT: "6379"              # Redis 기본 포트
+  # Kafka 설정 - 비동기 메시징
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"  # Kafka 브로커 주소
+  KAFKA_AUTO_OFFSET_RESET: "latest"              # 신규 Consumer는 최신 메시지부터 읽음
+  # Database 설정 - PostgreSQL
+  DB_HOST: "postgres-service"  # StatefulSet Service 이름
+  DB_PORT: "5432"              # PostgreSQL 기본 포트

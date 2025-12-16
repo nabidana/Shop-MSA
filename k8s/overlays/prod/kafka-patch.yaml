@@ -1,0 +1,69 @@
+# 운영 환경 Kafka 구성 (고가용성)
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  replicas: 3  # 운영에서는 최소 3개 브로커
+  template:
+    spec:
+      containers:
+      - name: kafka
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        env:
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: "3"  # 운영에서는 3개 복제
+        - name: KAFKA_MIN_INSYNC_REPLICAS
+          value: "2"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "6"  # 더 많은 파티션
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "336"  # 14일
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi  # 운영 환경 더 큰 스토리지
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+spec:
+  replicas: 3  # Zookeeper 앙상블 3개
+  template:
+    spec:
+      containers:
+      - name: zookeeper
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+  - metadata:
+      name: zookeeper-log
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
