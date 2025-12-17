@@ -3,11 +3,10 @@ kind: Kustomization
 
 resources:
   - configmap.yaml
-  - master-statefulset.yaml
-  - slave-statefulset.yaml
-  - sentinel-statefulset.yaml
+  - redis-master-statefulset.yaml
+  - redis-replica-statefulset.yaml
+  - redis-sentinel-statefulset.yaml
   - service.yaml
 
 commonLabels:
-  component: redis
-  managed-by: kustomize
+  component: redis-sentinel

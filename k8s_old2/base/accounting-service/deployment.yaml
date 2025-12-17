@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+  labels:
+    app: accounting-service
+    tier: backend
+    critical: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: accounting-service
+  template:
+    metadata:
+      labels:
+        app: accounting-service
+        tier: backend
+        critical: "true"
+    spec:
+      containers:
+      - name: accounting-service
+        image: accounting-service:latest
+        ports:
+        - containerPort: 8085
+          name: http
+          protocol: TCP
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "default"
+        - name: REDIS_HOST
+          value: "redis-sentinel"
+        - name: REDIS_PORT
+          value: "26379"
+        - name: REDIS_SENTINEL_MASTER
+          value: "mymaster"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: KAFKA_SETTLEMENT_TOPIC
+          value: "settlement-events"  # 정산 이벤트 구독
+        - name: KAFKA_ACCOUNTING_TOPIC
+          value: "accounting-events"  # 회계 이벤트 발행
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: accounting-service-config
+              key: db.host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: accounting-service-config
+              key: db.port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: accounting-service-config
+              key: db.name
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: accounting-service-secret
+              key: db.username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: accounting-service-secret
+              key: db.password
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 90
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8085
+          initialDelaySeconds: 45
+          periodSeconds: 5

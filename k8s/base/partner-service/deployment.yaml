@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: partner-service
+  namespace: microservices
   labels:
     app: partner-service
     tier: backend
@@ -24,41 +25,26 @@ spec:
           name: http
           protocol: TCP
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "default"
-        - name: REDIS_HOST
-          value: "redis-sentinel"
-        - name: REDIS_PORT
-          value: "26379"
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "kafka:9092"
-        - name: KAFKA_PARTNER_TOPIC
-          value: "partner-events"
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: partner-service-config
-              key: db.host
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: partner-service-config
-              key: db.port
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: partner-service-config
-              key: db.name
-        - name: DB_USERNAME
+        # PostgreSQL 연결 정보
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgresql.microservices.svc.cluster.local:5432/partnerdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "partnerservice"
+        - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: partner-service-secret
-              key: db.username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: partner-service-secret
-              key: db.password
+              name: postgres-secret
+              key: partnerservice-password
+        # Redis 연결 정보
+        - name: SPRING_REDIS_SENTINEL_MASTER
+          value: "mymaster"
+        - name: SPRING_REDIS_SENTINEL_NODES
+          value: "redis-sentinel-0.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-1.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-2.redis-sentinel.microservices.svc.cluster.local:26379"
+        # Kafka 연결 정보
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-0.kafka-headless.microservices.svc.cluster.local:9092,kafka-1.kafka-headless.microservices.svc.cluster.local:9092,kafka-2.kafka-headless.microservices.svc.cluster.local:9092"
+        - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+          value: "partner-service-group"
         resources:
           requests:
             memory: "512Mi"
@@ -68,13 +54,18 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /actuator/health/liveness
             port: 8084
-          initialDelaySeconds: 60
+          initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8084
-          initialDelaySeconds: 30
+          initialDelaySeconds: 20
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always

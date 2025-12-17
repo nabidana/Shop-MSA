@@ -2,20 +2,21 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base 참조
-resources:
+bases:
   - ../../base
-  - namespace.yaml
-  - secrets.yaml
-  - hpa.yaml
 
-# 네임스페이스 설정
-namespace: payment-prod
+# 네임스페이스 suffix 추가 (선택사항)
+# nameSuffix: -prod
 
-# 이미지 태그를 운영 환경용으로 변경
+# 운영환경 레이블 추가
+commonLabels:
+  environment: production
+
+# 이미지 태그 오버라이드 (프로덕션 이미지 사용)
 images:
   - name: api-gateway
     newName: your-registry/api-gateway
-    newTag: v1.0.0  # 운영은 버전 태그 사용
+    newTag: v1.0.0  # 특정 버전 태그 사용
   - name: user-service
     newName: your-registry/user-service
     newTag: v1.0.0
@@ -32,25 +33,35 @@ images:
     newName: your-registry/accounting-service
     newTag: v1.0.0
 
-# 환경별 패치 적용
+# PostgreSQL Operator 리소스 추가
+resources:
+  - postgres-operator/postgres-cluster.yaml
+  - postgres-operator/disable-base-postgres.yaml
+
+# 패치 적용
 patchesStrategicMerge:
-  - replica-patch.yaml
-  - redis-patch.yaml
-  - kafka-patch.yaml
+  - patches/replica-patch.yaml
+  - patches/resource-patch.yaml
+  - patches/hpa-patch.yaml
+  - patches/pdb-patch.yaml
+  - patches/postgres-connection-patch.yaml
 
-# ConfigMap 생성기 (환경 변수 오버라이드)
+# ConfigMap 생성 (운영환경 설정)
 configMapGenerator:
-  - name: global-config
+  - name: app-config
     literals:
-      - ENVIRONMENT=production
-      - LOG_LEVEL=INFO
       - SPRING_PROFILES_ACTIVE=prod
+      - LOG_LEVEL=INFO
 
-# 공통 레이블에 환경 추가
-commonLabels:
-  environment: production
-
-# 공통 어노테이션
-commonAnnotations:
-  environment: "production"
-  managed-by: "kustomize"
+# Secret은 외부 시크릿 관리 도구 사용 권장 (Vault, Sealed Secrets 등)
+# 여기서는 예시로만 제공
+secretGenerator:
+  - name: postgres-secret
+    behavior: merge
+    literals:
+      - postgres-password=CHANGE_ME_IN_PRODUCTION
+      - userservice-password=CHANGE_ME_IN_PRODUCTION
+      - paymentservice-password=CHANGE_ME_IN_PRODUCTION
+      - settlementservice-password=CHANGE_ME_IN_PRODUCTION
+      - partnerservice-password=CHANGE_ME_IN_PRODUCTION
+      - accountingservice-password=CHANGE_ME_IN_PRODUCTION

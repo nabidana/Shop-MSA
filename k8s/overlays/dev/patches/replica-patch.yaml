@@ -1,0 +1,108 @@
+# API Gateway 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: shop-msa
+spec:
+  replicas: 1  # 개발환경은 레플리카 수 감소
+
+---
+# User Service 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Payment Service 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Settlement Service 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-service
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Partner Service 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Accounting Service 레플리카 조정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Redis 레플리카 조정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-replica
+  namespace: shop-msa
+spec:
+  replicas: 1  # 개발환경은 Redis Replica 1개만
+
+---
+# Redis Sentinel 레플리카 조정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+  namespace: shop-msa
+spec:
+  replicas: 1  # 개발환경은 Sentinel 1개만 (프로덕션은 3개)
+
+---
+# Zookeeper 레플리카 조정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# Kafka 레플리카 조정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: shop-msa
+spec:
+  replicas: 1
+
+---
+# PostgreSQL 레플리카 조정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: shop-msa
+spec:
+  replicas: 1  # 개발환경은 1개만

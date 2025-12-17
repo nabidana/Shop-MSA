@@ -2,11 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
+  namespace: microservices
   labels:
     app: api-gateway
     tier: gateway
 spec:
-  replicas: 2  # 기본 레플리카 수 (환경별로 오버라이드 가능)
+  replicas: 2  # 기본 복제본 수 (환경별로 오버라이드 가능)
   selector:
     matchLabels:
       app: api-gateway
@@ -18,20 +19,31 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: api-gateway:latest  # 환경별로 오버라이드
+        image: api-gateway:latest  # 실제 이미지로 변경 필요
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "default"  # 환경별로 오버라이드
-        - name: REDIS_HOST
-          value: "redis-sentinel"
-        - name: REDIS_PORT
-          value: "26379"
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "kafka:9092"
+        # Redis 연결 정보 (Sentinel 사용)
+        - name: SPRING_REDIS_SENTINEL_MASTER
+          value: "mymaster"
+        - name: SPRING_REDIS_SENTINEL_NODES
+          value: "redis-sentinel-0.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-1.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-2.redis-sentinel.microservices.svc.cluster.local:26379"
+        # Kafka 연결 정보
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-0.kafka-headless.microservices.svc.cluster.local:9092,kafka-1.kafka-headless.microservices.svc.cluster.local:9092,kafka-2.kafka-headless.microservices.svc.cluster.local:9092"
+        # 서비스 디스커버리 (Kubernetes DNS 사용)
+        - name: USER_SERVICE_URL
+          value: "http://user-service.microservices.svc.cluster.local:8081"
+        - name: PAYMENT_SERVICE_URL
+          value: "http://payment-service.microservices.svc.cluster.local:8082"
+        - name: SETTLEMENT_SERVICE_URL
+          value: "http://settlement-service.microservices.svc.cluster.local:8083"
+        - name: PARTNER_SERVICE_URL
+          value: "http://partner-service.microservices.svc.cluster.local:8084"
+        - name: ACCOUNTING_SERVICE_URL
+          value: "http://accounting-service.microservices.svc.cluster.local:8085"
         resources:
           requests:
             memory: "512Mi"
@@ -41,9 +53,9 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /actuator/health/liveness
             port: 8080
-          initialDelaySeconds: 60
+          initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
@@ -51,7 +63,8 @@ spec:
           httpGet:
             path: /actuator/health/readiness
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 20
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+      restartPolicy: Always

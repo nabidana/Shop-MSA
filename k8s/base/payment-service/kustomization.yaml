@@ -6,5 +6,4 @@ resources:
   - service.yaml
 
 commonLabels:
-  app: payment-service
-  managed-by: kustomize
+  component: payment-service

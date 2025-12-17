@@ -1,0 +1,116 @@
+# API Gateway PDB (Pod Disruption Budget)
+# 롤링 업데이트나 노드 유지보수 시 최소 가용 Pod 보장
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2  # 최소 2개의 Pod는 항상 가용
+  selector:
+    matchLabels:
+      app: api-gateway
+
+---
+# Payment Service PDB (중요 서비스는 더 높은 가용성 보장)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: payment-service-pdb
+  namespace: microservices
+spec:
+  minAvailable: 3  # 최소 3개의 Pod는 항상 가용
+  selector:
+    matchLabels:
+      app: payment-service
+
+---
+# Settlement Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: settlement-service-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: settlement-service
+
+---
+# Accounting Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: accounting-service-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: accounting-service
+
+---
+# User Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-service-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user-service
+
+---
+# Partner Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: partner-service-pdb
+  namespace: microservices
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: partner-service
+
+---
+# Redis Sentinel PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-sentinel-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2  # Sentinel은 최소 2개 필요 (쿼럼)
+  selector:
+    matchLabels:
+      app: redis-sentinel
+
+---
+# Kafka PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2  # Kafka는 최소 2개 브로커 유지
+  selector:
+    matchLabels:
+      app: kafka
+
+---
+# Zookeeper PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zookeeper-pdb
+  namespace: microservices
+spec:
+  minAvailable: 2  # Zookeeper는 최소 2개 유지 (쿼럼)
+  selector:
+    matchLabels:
+      app: zookeeper

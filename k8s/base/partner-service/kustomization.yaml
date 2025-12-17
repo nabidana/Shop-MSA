@@ -6,5 +6,4 @@ resources:
   - service.yaml
 
 commonLabels:
-  app: partner-service
-  managed-by: kustomize
+  component: partner-service

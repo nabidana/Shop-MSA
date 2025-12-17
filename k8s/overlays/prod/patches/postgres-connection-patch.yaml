@@ -1,0 +1,117 @@
+# 운영환경에서는 PostgreSQL Operator 클러스터 사용
+# 각 서비스의 DB 연결 정보를 Operator 클러스터로 변경
+
+---
+# User Service - PostgreSQL Operator 연결
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: microservices
+spec:
+  template:
+    spec:
+      containers:
+      - name: user-service
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-cluster-rw.microservices.svc.cluster.local:5432/userdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "userservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: userservice.postgres-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+
+---
+# Payment Service - PostgreSQL Operator 연결
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  template:
+    spec:
+      containers:
+      - name: payment-service
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-cluster-rw.microservices.svc.cluster.local:5432/paymentdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "paymentservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: paymentservice.postgres-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+
+---
+# Settlement Service - PostgreSQL Operator 연결
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-service
+  namespace: microservices
+spec:
+  template:
+    spec:
+      containers:
+      - name: settlement-service
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-cluster-rw.microservices.svc.cluster.local:5432/settlementdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "settlementservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: settlementservice.postgres-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+
+---
+# Partner Service - PostgreSQL Operator 연결
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+  namespace: microservices
+spec:
+  template:
+    spec:
+      containers:
+      - name: partner-service
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-cluster-rw.microservices.svc.cluster.local:5432/partnerdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "partnerservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: partnerservice.postgres-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+
+---
+# Accounting Service - PostgreSQL Operator 연결
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+  namespace: microservices
+spec:
+  template:
+    spec:
+      containers:
+      - name: accounting-service
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-cluster-rw.microservices.svc.cluster.local:5432/accountingdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "accountingservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: accountingservice.postgres-cluster.credentials.postgresql.acid.zalan.do
+              key: password

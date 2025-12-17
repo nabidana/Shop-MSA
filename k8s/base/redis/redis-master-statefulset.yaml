@@ -2,12 +2,13 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-master
+  namespace: shop-msa
   labels:
     app: redis
     role: master
 spec:
   serviceName: redis-master
-  replicas: 1  # Master는 1개
+  replicas: 1  # Master는 1개만 유지
   selector:
     matchLabels:
       app: redis
@@ -20,31 +21,34 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:7-alpine
+        # image: redis:7.2.7-alpine3.22 # 가장 보편화된 안정적인 버전
+        image : redis:8.4.0-alpine3.22 # 최신버전
+        command:
+          - redis-server
+          - /etc/redis/redis-master.conf
         ports:
         - containerPort: 6379
           name: redis
-        command:
-        - redis-server
-        args:
-        - /etc/redis/master.conf
+          protocol: TCP
         volumeMounts:
-        - name: redis-config
+        - name: config
           mountPath: /etc/redis
-        - name: redis-data
+        - name: data
           mountPath: /data
         resources:
           requests:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "250m"
           limits:
             memory: "512Mi"
-            cpu: "200m"
+            cpu: "500m"
         livenessProbe:
           tcpSocket:
             port: 6379
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
@@ -52,15 +56,17 @@ spec:
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 3
       volumes:
-      - name: redis-config
+      - name: config
         configMap:
           name: redis-config
+  # 영구 볼륨 클레임 템플릿
   volumeClaimTemplates:
   - metadata:
-      name: redis-data
+      name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 5Gi  # 환경별로 오버라이드 가능
+          storage: 5Gi

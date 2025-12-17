@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base 참조
+resources:
+  - ../../base
+  - namespace.yaml
+  - secrets.yaml
+  - hpa.yaml
+
+# 네임스페이스 설정
+namespace: payment-prod
+
+# 이미지 태그를 운영 환경용으로 변경
+images:
+  - name: api-gateway
+    newName: your-registry/api-gateway
+    newTag: v1.0.0  # 운영은 버전 태그 사용
+  - name: user-service
+    newName: your-registry/user-service
+    newTag: v1.0.0
+  - name: payment-service
+    newName: your-registry/payment-service
+    newTag: v1.0.0
+  - name: settlement-service
+    newName: your-registry/settlement-service
+    newTag: v1.0.0
+  - name: partner-service
+    newName: your-registry/partner-service
+    newTag: v1.0.0
+  - name: accounting-service
+    newName: your-registry/accounting-service
+    newTag: v1.0.0
+
+# 환경별 패치 적용
+patchesStrategicMerge:
+  - replica-patch.yaml
+  - redis-patch.yaml
+  - kafka-patch.yaml
+
+# ConfigMap 생성기 (환경 변수 오버라이드)
+configMapGenerator:
+  - name: global-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - SPRING_PROFILES_ACTIVE=prod
+
+# 공통 레이블에 환경 추가
+commonLabels:
+  environment: production
+
+# 공통 어노테이션
+commonAnnotations:
+  environment: "production"
+  managed-by: "kustomize"

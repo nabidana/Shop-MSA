@@ -6,5 +6,4 @@ resources:
   - service.yaml
 
 commonLabels:
-  app: accounting-service
-  managed-by: kustomize
+  component: accounting-service

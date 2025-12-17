@@ -1,0 +1,61 @@
+# 테스트 환경 Replica 설정 (최소 리소스)
+
+---
+# PostgreSQL
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: microservices
+spec:
+  replicas: 1  # 테스트는 단일 인스턴스
+
+---
+# Redis Master
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-master
+  namespace: microservices
+spec:
+  replicas: 1
+
+---
+# Redis Replica
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-replica
+  namespace: microservices
+spec:
+  replicas: 1  # 테스트는 1개만
+
+---
+# Redis Sentinel
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+  namespace: microservices
+spec:
+  replicas: 1  # 테스트는 1개만 (운영은 3개 권장)
+
+---
+# Zookeeper
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: microservices
+spec:
+  replicas: 1  # 테스트는 단일 노드
+
+---
+# Kafka
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: microservices
+spec:
+  replicas: 1  # 테스트는 단일 브로커

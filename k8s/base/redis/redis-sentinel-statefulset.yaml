@@ -2,74 +2,75 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-sentinel
+  namespace: shop-msa
   labels:
-    app: redis
-    role: sentinel
+    app: redis-sentinel
 spec:
   serviceName: redis-sentinel
-  replicas: 3  # Sentinel은 홀수 개 권장 (쿼럼을 위해)
+  replicas: 3  # Sentinel은 3개 유지 (쿼럼을 위해 홀수 권장)
   selector:
     matchLabels:
-      app: redis
-      role: sentinel
+      app: redis-sentinel
   template:
     metadata:
       labels:
-        app: redis
-        role: sentinel
+        app: redis-sentinel
     spec:
-      # Sentinel 초기화 컨테이너 (master IP 자동 검색)
       initContainers:
-      - name: init-sentinel
-        image: redis:7-alpine
+      # Sentinel 설정 파일 초기화
+      - name: init-sentinel-config
+        image: redis:7.2-alpine
         command:
-        - sh
-        - -c
-        - |
-          # Redis Master IP를 Sentinel 설정에 업데이트
-          cp /tmp/sentinel.conf /etc/redis/sentinel.conf
-          sed -i "s/redis-master/redis-master-0.redis-master.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local/g" /etc/redis/sentinel.conf
+          - sh
+          - -c
+          - |
+            cp /readonly-config/redis-sentinel.conf /etc/redis/sentinel.conf
+            chmod 644 /etc/redis/sentinel.conf
         volumeMounts:
-        - name: redis-config
-          mountPath: /tmp
+        - name: config
+          mountPath: /readonly-config
         - name: sentinel-config
           mountPath: /etc/redis
       containers:
       - name: sentinel
-        image: redis:7-alpine
+        image : redis:8.4.0-alpine3.22
+        command:
+          - redis-sentinel
+          - /etc/redis/sentinel.conf
         ports:
         - containerPort: 26379
           name: sentinel
-        command:
-        - redis-sentinel
-        args:
-        - /etc/redis/sentinel.conf
+          protocol: TCP
         volumeMounts:
         - name: sentinel-config
           mountPath: /etc/redis
         resources:
           requests:
             memory: "128Mi"
-            cpu: "50m"
+            cpu: "100m"
           limits:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "200m"
         livenessProbe:
           tcpSocket:
             port: 26379
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
             - redis-cli
             - -p
             - "26379"
+            - sentinel
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 3
       volumes:
-      - name: redis-config
+      - name: config
         configMap:
           name: redis-config
       - name: sentinel-config

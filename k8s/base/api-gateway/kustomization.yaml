@@ -7,5 +7,4 @@ resources:
 
 # 공통 레이블 추가
 commonLabels:
-  app: api-gateway
-  managed-by: kustomize
+  component: api-gateway

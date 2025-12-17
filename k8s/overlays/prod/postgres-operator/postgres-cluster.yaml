@@ -1,0 +1,148 @@
+# PostgreSQL Operator를 사용한 고가용성 클러스터
+# Operator 설치 필요: kubectl apply -f https://operatorhub.io/install/postgres-operator.yaml
+# 또는: kubectl apply -k github.com/zalando/postgres-operator/manifests
+
+apiVersion: acid.zalan.do/v1
+kind: postgresql
+metadata:
+  name: postgres-cluster
+  namespace: shop-msa
+  labels:
+    app: postgres
+    environment: production
+spec:
+  # 팀 이름 (Operator 권한 관리용)
+  teamId: "shop-msa"
+  
+  # PostgreSQL 버전
+  version: "15"
+  
+  # 클러스터 사이즈
+  numberOfInstances: 3  # Master 1 + Replica 2
+  
+  # 볼륨 설정
+  volume:
+    size: 50Gi
+    storageClass: standard  # 환경에 맞게 변경
+  
+  # 리소스 할당
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  
+  # 데이터베이스 생성
+  databases:
+    userdb: userservice
+    paymentdb: paymentservice
+    settlementdb: settlementservice
+    partnerdb: partnerservice
+    accountingdb: accountingservice
+  
+  # 사용자 생성
+  users:
+    userservice:
+      - superuser
+      - createdb
+    paymentservice:
+      - superuser
+      - createdb
+    settlementservice:
+      - superuser
+      - createdb
+    partnerservice:
+      - superuser
+      - createdb
+    accountingservice:
+      - superuser
+      - createdb
+  
+  # PostgreSQL 파라미터 설정
+  postgresql:
+    version: "15"
+    parameters:
+      # 연결 설정
+      max_connections: "200"
+      shared_buffers: "1GB"
+      effective_cache_size: "3GB"
+      
+      # WAL 설정
+      wal_level: replica
+      max_wal_senders: "10"
+      max_replication_slots: "10"
+      
+      # 성능 설정
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "16MB"
+      maintenance_work_mem: "256MB"
+      
+      # 체크포인트 설정
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+  
+  # 자동 백업 설정 (WAL-E/WAL-G)
+  # enableWalArchiving: true
+  # enableLogicalBackup: true
+  
+  # 연결 풀링 (PgBouncer)
+  enableConnectionPooler: true
+  connectionPooler:
+    numberOfInstances: 2
+    mode: "transaction"
+    parameters:
+      pool_mode: "transaction"
+      max_client_conn: "1000"
+      default_pool_size: "25"
+  
+  # Pod 분산 배치 (고가용성)
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: application
+            operator: In
+            values:
+            - postgres-cluster
+        topologyKey: kubernetes.io/hostname
+  
+  # 클론 설정 (스탠바이 클러스터용)
+  # clone:
+  #   cluster: "postgres-cluster"
+  
+  # 유지보수 윈도우
+  maintenanceWindows:
+  - Sun:03:00-Sun:04:00
+  
+  # 리소스 제한
+  tolerations:
+  - key: "database"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+---
+# Service Monitor (Prometheus 모니터링용)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-cluster-metrics
+  namespace: shop-msa
+  labels:
+    app: postgres
+    role: metrics
+spec:
+  type: ClusterIP
+  selector:
+    application: postgres-cluster
+  ports:
+  - name: metrics
+    port: 9187
+    targetPort: 9187
+    protocol: TCP

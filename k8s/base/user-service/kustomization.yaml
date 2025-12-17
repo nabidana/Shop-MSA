@@ -5,7 +5,5 @@ resources:
   - deployment.yaml
   - service.yaml
 
-# Secret은 환경별로 생성 (base에서는 제외)
 commonLabels:
-  app: user-service
-  managed-by: kustomize
+  component: user-service

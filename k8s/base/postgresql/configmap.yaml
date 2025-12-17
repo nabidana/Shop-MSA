@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: microservices
+  labels:
+    app: postgresql
+data:
+  # PostgreSQL 초기화 스크립트
+  init-db.sh: |
+    #!/bin/bash
+    set -e
+    
+    # 각 서비스별 데이터베이스 생성
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        -- User Service Database
+        CREATE DATABASE userdb;
+        CREATE USER userservice WITH ENCRYPTED PASSWORD 'userservice_password';
+        GRANT ALL PRIVILEGES ON DATABASE userdb TO userservice;
+        
+        -- Payment Service Database
+        CREATE DATABASE paymentdb;
+        CREATE USER paymentservice WITH ENCRYPTED PASSWORD 'paymentservice_password';
+        GRANT ALL PRIVILEGES ON DATABASE paymentdb TO paymentservice;
+        
+        -- Settlement Service Database
+        CREATE DATABASE settlementdb;
+        CREATE USER settlementservice WITH ENCRYPTED PASSWORD 'settlementservice_password';
+        GRANT ALL PRIVILEGES ON DATABASE settlementdb TO settlementservice;
+        
+        -- Partner Service Database
+        CREATE DATABASE partnerdb;
+        CREATE USER partnerservice WITH ENCRYPTED PASSWORD 'partnerservice_password';
+        GRANT ALL PRIVILEGES ON DATABASE partnerdb TO partnerservice;
+        
+        -- Accounting Service Database
+        CREATE DATABASE accountingdb;
+        CREATE USER accountingservice WITH ENCRYPTED PASSWORD 'accountingservice_password';
+        GRANT ALL PRIVILEGES ON DATABASE accountingdb TO accountingservice;
+    EOSQL
+    
+    echo "All databases created successfully!"
+  
+  # PostgreSQL 설정
+  postgresql.conf: |
+    # 연결 설정
+    listen_addresses = '*'
+    max_connections = 100
+    
+    # 메모리 설정
+    shared_buffers = 128MB
+    effective_cache_size = 512MB
+    work_mem = 4MB
+    maintenance_work_mem = 64MB
+    
+    # WAL 설정
+    wal_level = replica
+    max_wal_senders = 3
+    
+    # 로깅
+    logging_collector = on
+    log_directory = 'pg_log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_statement = 'mod'
+    log_min_duration_statement = 1000

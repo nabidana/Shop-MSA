@@ -1,0 +1,10 @@
+# 운영환경에서는 Base의 PostgreSQL StatefulSet 대신 Operator 사용
+# Base PostgreSQL을 0으로 스케일 다운
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: shop-msa
+spec:
+  replicas: 0  # Base PostgreSQL 비활성화

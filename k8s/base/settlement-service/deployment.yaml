@@ -2,10 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: settlement-service
+  namespace: microservices
   labels:
     app: settlement-service
     tier: backend
-    critical: "true"
+    critical: "true"  # 정산 서비스도 중요 서비스
 spec:
   replicas: 2
   selector:
@@ -26,61 +27,54 @@ spec:
           name: http
           protocol: TCP
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "default"
-        - name: REDIS_HOST
-          value: "redis-sentinel"
-        - name: REDIS_PORT
-          value: "26379"
-        - name: REDIS_SENTINEL_MASTER
+        # PostgreSQL 연결 정보
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgresql.microservices.svc.cluster.local:5432/settlementdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "settlementservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: settlementservice-password
+        # Redis 연결 정보 (정산 상태 캐싱)
+        - name: SPRING_REDIS_SENTINEL_MASTER
           value: "mymaster"
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "kafka:9092"
-        - name: KAFKA_PAYMENT_TOPIC
-          value: "payment-events"  # 결제 이벤트 구독
-        - name: KAFKA_SETTLEMENT_TOPIC
-          value: "settlement-events"  # 정산 이벤트 발행
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: settlement-service-config
-              key: db.host
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: settlement-service-config
-              key: db.port
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: settlement-service-config
-              key: db.name
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: settlement-service-secret
-              key: db.username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: settlement-service-secret
-              key: db.password
+        - name: SPRING_REDIS_SENTINEL_NODES
+          value: "redis-sentinel-0.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-1.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-2.redis-sentinel.microservices.svc.cluster.local:26379"
+        # Kafka 연결 정보 (결제 완료 이벤트 구독)
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-0.kafka-headless.microservices.svc.cluster.local:9092,kafka-1.kafka-headless.microservices.svc.cluster.local:9092,kafka-2.kafka-headless.microservices.svc.cluster.local:9092"
+        - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+          value: "settlement-service-group"
+        # 정산 관련 토픽 설정
+        - name: KAFKA_TOPIC_PAYMENT_COMPLETED
+          value: "payment-completed"
+        - name: KAFKA_TOPIC_SETTLEMENT_REQUESTED
+          value: "settlement-requested"
+        - name: KAFKA_TOPIC_SETTLEMENT_COMPLETED
+          value: "settlement-completed"
         resources:
           requests:
-            memory: "1Gi"
+            memory: "768Mi"
             cpu: "500m"
           limits:
-            memory: "2Gi"
+            memory: "1.5Gi"
             cpu: "1000m"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /actuator/health/liveness
             port: 8083
-          initialDelaySeconds: 90
+          initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8083
-          initialDelaySeconds: 45
+          initialDelaySeconds: 20
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always

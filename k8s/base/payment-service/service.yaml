@@ -2,27 +2,22 @@ apiVersion: v1
 kind: Service
 metadata:
   name: payment-service
+  namespace: microservices
   labels:
     app: payment-service
+    tier: backend
+    critical: "true"
 spec:
   type: ClusterIP
-  ports:
-  - port: 8082
-    targetPort: 8082
-    protocol: TCP
-    name: http
   selector:
     app: payment-service
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: payment-service-config
-data:
-  db.host: "postgres"
-  db.port: "5432"
-  db.name: "paymentdb"
-  # 결제 타임아웃 설정
-  payment.timeout.seconds: "30"
-  # Redis 캐시 TTL 설정
-  redis.cache.ttl.seconds: "300"
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082
+    protocol: TCP
+  # 세션 어피니티 설정 (결제 처리 중 Pod 변경 방지)
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600  # 1시간 동안 동일 Pod 유지

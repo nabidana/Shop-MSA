@@ -1,0 +1,30 @@
+# Zalando PostgreSQL Operator 배포는 클러스터 레벨에서 한 번만 설치
+# 아래는 설치 가이드용 주석입니다. 실제 적용은 별도로 해야 합니다.
+#
+# Operator 설치 방법:
+# kubectl apply -k github.com/zalando/postgres-operator/manifests
+#
+# 또는 Helm:
+# helm repo add postgres-operator-charts https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+# helm install postgres-operator postgres-operator-charts/postgres-operator
+#
+# Operator UI (선택사항):
+# helm install postgres-operator-ui postgres-operator-charts/postgres-operator-ui
+
+---
+# PostgreSQL Operator를 위한 StorageClass (SSD 사용 권장)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: postgres-ssd
+  labels:
+    app: postgres
+provisioner: kubernetes.io/aws-ebs  # AWS 예시, GCP는 kubernetes.io/gce-pd
+parameters:
+  type: gp3  # AWS GP3 SSD
+  iops: "3000"
+  throughput: "125"
+  fsType: ext4
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain  # 삭제 시 데이터 보존

@@ -1,119 +1,90 @@
 #!/bin/bash
-###############################################################################
+
 # 개발 환경 배포 스크립트
 # 사용법: ./deploy-dev.sh
-###############################################################################
 
 set -e  # 에러 발생 시 스크립트 중단
 
-# 색상 정의
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+echo "========================================="
+echo "  개발 환경 배포 시작"
+echo "========================================="
 
-# 로그 함수
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
+# 현재 디렉토리 확인
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
+echo ""
+echo "📁 프로젝트 루트: $PROJECT_ROOT"
+echo ""
 
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# 변수 설정
-ENVIRONMENT="dev"
-NAMESPACE="payment-dev"
-KUSTOMIZE_DIR="overlays/dev"
-
-log_info "=== 개발 환경 배포 시작 ==="
-log_info "Environment: ${ENVIRONMENT}"
-log_info "Namespace: ${NAMESPACE}"
-
-# kubectl 체크
+# kubectl 설치 확인
 if ! command -v kubectl &> /dev/null; then
-    log_error "kubectl이 설치되어 있지 않습니다."
+    echo "❌ kubectl이 설치되어 있지 않습니다."
     exit 1
 fi
 
-# Kustomize 체크 (kubectl에 내장)
-log_info "Kustomize 버전 확인..."
-kubectl kustomize --help &> /dev/null || {
-    log_error "kubectl kustomize를 사용할 수 없습니다."
-    exit 1
-}
+# kustomize 설치 확인
+if ! command -v kustomize &> /dev/null; then
+    echo "⚠️  kustomize가 설치되어 있지 않습니다. kubectl에 내장된 버전을 사용합니다."
+    KUSTOMIZE_CMD="kubectl apply -k"
+else
+    echo "✅ kustomize 발견"
+    KUSTOMIZE_CMD="kustomize build"
+fi
 
-# 네임스페이스 생성 확인
-log_info "네임스페이스 확인 및 생성..."
-kubectl get namespace ${NAMESPACE} &> /dev/null || {
-    log_warn "네임스페이스 ${NAMESPACE}가 존재하지 않습니다. 생성 중..."
-    kubectl create namespace ${NAMESPACE}
-}
+# 현재 컨텍스트 확인
+echo ""
+echo "🔍 현재 Kubernetes 컨텍스트:"
+kubectl config current-context
+echo ""
+read -p "계속 진행하시겠습니까? (y/N): " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "배포를 취소했습니다."
+    exit 0
+fi
 
-# Dry-run으로 먼저 확인 (선택사항)
-log_info "배포 설정 검증 중 (dry-run)..."
-kubectl apply --dry-run=client -k ${KUSTOMIZE_DIR} > /dev/null 2>&1 || {
-    log_error "Kustomize 설정에 오류가 있습니다."
-    exit 1
-}
+# 네임스페이스 생성
+echo ""
+echo "📦 네임스페이스 생성 중..."
+kubectl create namespace microservices --dry-run=client -o yaml | kubectl apply -f -
 
-# 실제 배포
-log_info "리소스 배포 중..."
-kubectl apply -k ${KUSTOMIZE_DIR}
+# 개발 환경 배포
+echo ""
+echo "🚀 개발 환경 리소스 배포 중..."
+cd "$PROJECT_ROOT/overlays/dev"
+
+if [[ $KUSTOMIZE_CMD == "kustomize build" ]]; then
+    kustomize build . | kubectl apply -f -
+else
+    kubectl apply -k .
+fi
 
 # 배포 상태 확인
-log_info "배포 완료. 리소스 상태 확인 중..."
+echo ""
+echo "⏳ 배포 상태 확인 중..."
 echo ""
 
-log_info "=== Deployments 상태 ==="
-kubectl get deployments -n ${NAMESPACE} -o wide
+# Pod 상태 확인
+echo "📊 Pod 상태:"
+kubectl get pods -n microservices -o wide
 
 echo ""
-log_info "=== StatefulSets 상태 ==="
-kubectl get statefulsets -n ${NAMESPACE} -o wide
+echo "📊 Service 상태:"
+kubectl get svc -n microservices
 
 echo ""
-log_info "=== Services 상태 ==="
-kubectl get services -n ${NAMESPACE} -o wide
+echo "📊 StatefulSet 상태:"
+kubectl get statefulset -n microservices
 
 echo ""
-log_info "=== Pods 상태 ==="
-kubectl get pods -n ${NAMESPACE} -o wide
-
-# Pod 준비 대기 (선택사항)
-log_info ""
-log_info "Pod가 Ready 상태가 될 때까지 대기 중..."
-log_warn "이 작업은 시간이 걸릴 수 있습니다. Ctrl+C로 중단할 수 있습니다."
-
-# 각 Deployment의 rollout 상태 확인
-for deploy in api-gateway user-service payment-service settlement-service partner-service accounting-service; do
-    log_info "Waiting for ${deploy}..."
-    kubectl rollout status deployment/${deploy} -n ${NAMESPACE} --timeout=5m || {
-        log_warn "${deploy} 배포가 시간 내에 완료되지 않았습니다."
-    }
-done
-
-# Redis 및 Kafka StatefulSet 확인
-for sts in redis-master redis-slave redis-sentinel kafka zookeeper; do
-    log_info "Waiting for ${sts}..."
-    kubectl rollout status statefulset/${sts} -n ${NAMESPACE} --timeout=5m || {
-        log_warn "${sts} StatefulSet이 시간 내에 완료되지 않았습니다."
-    }
-done
-
+echo "========================================="
+echo "  ✅ 개발 환경 배포 완료"
+echo "========================================="
 echo ""
-log_info "=== 개발 환경 배포 완료 ==="
-log_info "네임스페이스: ${NAMESPACE}"
-log_info ""
-log_info "다음 명령어로 상태를 확인할 수 있습니다:"
-log_info "  kubectl get all -n ${NAMESPACE}"
-log_info "  kubectl logs -n ${NAMESPACE} <pod-name>"
-log_info ""
-log_info "API Gateway 엔드포인트 확인:"
-kubectl get service api-gateway -n ${NAMESPACE}
-
-exit 0
+echo "📝 유용한 명령어:"
+echo "  - Pod 로그 확인: kubectl logs -f <pod-name> -n microservices"
+echo "  - Pod 상태 모니터링: kubectl get pods -n microservices -w"
+echo "  - 서비스 접속 확인: kubectl port-forward svc/api-gateway 8080:80 -n microservices"
+echo "  - API Gateway URL (NodePort): http://<node-ip>:30080"
+echo ""

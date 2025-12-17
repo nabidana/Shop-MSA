@@ -1,0 +1,98 @@
+# API Gateway 레플리카 설정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: microservices
+spec:
+  replicas: 3  # 운영환경은 높은 가용성 유지
+
+---
+# User Service 레플리카 설정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: microservices
+spec:
+  replicas: 3
+
+---
+# Payment Service 레플리카 설정 (중요 서비스는 더 많은 복제본)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  replicas: 5
+
+---
+# Settlement Service 레플리카 설정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-service
+  namespace: microservices
+spec:
+  replicas: 3
+
+---
+# Partner Service 레플리카 설정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-service
+  namespace: microservices
+spec:
+  replicas: 2
+
+---
+# Accounting Service 레플리카 설정
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+  namespace: microservices
+spec:
+  replicas: 3
+
+---
+# Redis Replica 설정 (운영환경은 2개 유지)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-replica
+  namespace: microservices
+spec:
+  replicas: 2
+
+---
+# Redis Sentinel 설정 (운영환경은 3개 유지)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sentinel
+  namespace: microservices
+spec:
+  replicas: 3
+
+---
+# Zookeeper 설정 (운영환경은 3개 유지)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: microservices
+spec:
+  replicas: 3
+
+---
+# Kafka 설정 (운영환경은 3개 유지)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: microservices
+spec:
+  replicas: 3

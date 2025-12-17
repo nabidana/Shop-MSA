@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  labels:
+    app: postgres
+data:
+  # PostgreSQL 설정
+  POSTGRES_DB: "paymentdb"
+  POSTGRES_MAX_CONNECTIONS: "100"
+  POSTGRES_SHARED_BUFFERS: "128MB"
+  
+  # 초기화 스크립트 (여러 데이터베이스 생성)
+  init.sql: |
+    -- User Service DB
+    CREATE DATABASE userdb;
+    CREATE USER user_service WITH ENCRYPTED PASSWORD 'user_password';
+    GRANT ALL PRIVILEGES ON DATABASE userdb TO user_service;
+
+    -- Payment Service DB
+    CREATE DATABASE paymentdb;
+    CREATE USER payment_service WITH ENCRYPTED PASSWORD 'payment_password';
+    GRANT ALL PRIVILEGES ON DATABASE paymentdb TO payment_service;
+
+    -- Settlement Service DB
+    CREATE DATABASE settlementdb;
+    CREATE USER settlement_service WITH ENCRYPTED PASSWORD 'settlement_password';
+    GRANT ALL PRIVILEGES ON DATABASE settlementdb TO settlement_service;
+
+    -- Partner Service DB
+    CREATE DATABASE partnerdb;
+    CREATE USER partner_service WITH ENCRYPTED PASSWORD 'partner_password';
+    GRANT ALL PRIVILEGES ON DATABASE partnerdb TO partner_service;
+
+    -- Accounting Service DB
+    CREATE DATABASE accountingdb;
+    CREATE USER accounting_service WITH ENCRYPTED PASSWORD 'accounting_password';
+    GRANT ALL PRIVILEGES ON DATABASE accountingdb TO accounting_service;

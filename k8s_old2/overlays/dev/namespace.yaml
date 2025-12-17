@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: payment-dev
+  name: shop-msa-dev
   labels:
     environment: development
-    project: payment-system
+    project: shop-msa

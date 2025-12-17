@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: microservices
+  labels:
+    app: postgresql
+spec:
+  serviceName: postgresql-headless
+  replicas: 1  # Base는 1개 (환경별로 오버라이드 가능)
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+          protocol: TCP
+        env:
+        # 기본 슈퍼유저 설정
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: "postgres"
+        # 데이터 디렉토리
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        # 데이터 볼륨
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        # 초기화 스크립트
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        # 설정 파일 (선택사항)
+        # - name: config
+        #   mountPath: /etc/postgresql
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U postgres
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      # 초기화 스크립트 ConfigMap
+      - name: init-script
+        configMap:
+          name: postgres-config
+          items:
+          - key: init-db.sh
+            path: init-db.sh
+            mode: 0755
+      # PostgreSQL 설정 (선택사항)
+      # - name: config
+      #   configMap:
+      #     name: postgres-config
+  # 영구 볼륨 클레임 템플릿
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: postgresql
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi  # 환경별로 조정 가능

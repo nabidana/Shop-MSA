@@ -2,11 +2,12 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
+  namespace: shop-msa
   labels:
     app: zookeeper
 spec:
   serviceName: zookeeper-headless
-  replicas: 3  # Zookeeper 앙상블 3개 노드
+  replicas: 3  # Zookeeper 앙상블은 홀수 권장
   selector:
     matchLabels:
       app: zookeeper
@@ -17,20 +18,24 @@ spec:
     spec:
       containers:
       - name: zookeeper
-        image: confluentinc/cp-zookeeper:7.5.0
+        # image: confluentinc/cp-zookeeper:7.5.0
+        image: confluentinc/cp-zookeeper:7.8.6
         ports:
         - containerPort: 2181
           name: client
         - containerPort: 2888
-          name: follower
+          name: server
         - containerPort: 3888
-          name: election
+          name: leader-election
         env:
-        # Zookeeper ID는 StatefulSet ordinal 사용
+        # Zookeeper ID (StatefulSet ordinal 사용)
         - name: ZOOKEEPER_SERVER_ID
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        # Zookeeper 앙상블 구성
+        - name: ZOOKEEPER_SERVERS
+          value: "zookeeper-0.zookeeper-headless.microservices.svc.cluster.local:2888:3888;zookeeper-1.zookeeper-headless.microservices.svc.cluster.local:2888:3888;zookeeper-2.zookeeper-headless.microservices.svc.cluster.local:2888:3888"
         - name: ZOOKEEPER_CLIENT_PORT
           value: "2181"
         - name: ZOOKEEPER_TICK_TIME
@@ -39,13 +44,10 @@ spec:
           value: "5"
         - name: ZOOKEEPER_SYNC_LIMIT
           value: "2"
-        # 앙상블 구성 (3개 노드)
-        - name: ZOOKEEPER_SERVERS
-          value: "zookeeper-0.zookeeper-headless:2888:3888;zookeeper-1.zookeeper-headless:2888:3888;zookeeper-2.zookeeper-headless:2888:3888"
         volumeMounts:
-        - name: zookeeper-data
+        - name: data
           mountPath: /var/lib/zookeeper/data
-        - name: zookeeper-log
+        - name: datalog
           mountPath: /var/lib/zookeeper/log
         resources:
           requests:
@@ -59,24 +61,28 @@ spec:
             port: 2181
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
-            - /bin/bash
+            - sh
             - -c
-            - "echo ruok | nc localhost 2181 | grep imok"
+            - 'echo "ruok" | nc localhost 2181 | grep imok'
           initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 3
+  # 영구 볼륨 클레임 템플릿
   volumeClaimTemplates:
   - metadata:
-      name: zookeeper-data
+      name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
           storage: 5Gi
   - metadata:
-      name: zookeeper-log
+      name: datalog
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

@@ -2,20 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-service
+  namespace: microservices
   labels:
     app: payment-service
     tier: backend
-    critical: "true"  # 중요 서비스 표시
+    critical: "true"  # 결제 서비스는 중요 서비스로 표시
 spec:
-  replicas: 3  # 결제 서비스는 고가용성 필요
+  replicas: 3  # 결제 서비스는 더 많은 복제본 유지
   selector:
     matchLabels:
       app: payment-service
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0  # 무중단 배포
   template:
     metadata:
       labels:
@@ -23,8 +19,67 @@ spec:
         tier: backend
         critical: "true"
     spec:
+      containers:
+      - name: payment-service
+        image: payment-service:latest
+        ports:
+        - containerPort: 8082
+          name: http
+          protocol: TCP
+        env:
+        # PostgreSQL 연결 정보
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgresql.microservices.svc.cluster.local:5432/paymentdb"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "paymentservice"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: paymentservice-password
+        # Redis 연결 정보 (결제 중복 방지용 캐시)
+        - name: SPRING_REDIS_SENTINEL_MASTER
+          value: "mymaster"
+        - name: SPRING_REDIS_SENTINEL_NODES
+          value: "redis-sentinel-0.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-1.redis-sentinel.microservices.svc.cluster.local:26379,redis-sentinel-2.redis-sentinel.microservices.svc.cluster.local:26379"
+        # Kafka 연결 정보 (결제 이벤트 발행)
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-0.kafka-headless.microservices.svc.cluster.local:9092,kafka-1.kafka-headless.microservices.svc.cluster.local:9092,kafka-2.kafka-headless.microservices.svc.cluster.local:9092"
+        - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+          value: "payment-service-group"
+        # 결제 관련 토픽 설정
+        - name: KAFKA_TOPIC_PAYMENT_REQUESTED
+          value: "payment-requested"
+        - name: KAFKA_TOPIC_PAYMENT_COMPLETED
+          value: "payment-completed"
+        - name: KAFKA_TOPIC_PAYMENT_FAILED
+          value: "payment-failed"
+        resources:
+          requests:
+            memory: "768Mi"  # 결제 서비스는 더 많은 리소스 할당
+            cpu: "500m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8082
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
+      # Pod 분산 배치 정책 (고가용성 보장)
       affinity:
-        # Pod anti-affinity로 다른 노드에 분산 배치
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -36,76 +91,3 @@ spec:
                   values:
                   - payment-service
               topologyKey: kubernetes.io/hostname
-      containers:
-      - name: payment-service
-        image: payment-service:latest
-        ports:
-        - containerPort: 8082
-          name: http
-          protocol: TCP
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "default"
-        - name: REDIS_HOST
-          value: "redis-sentinel"
-        - name: REDIS_PORT
-          value: "26379"
-        - name: REDIS_SENTINEL_MASTER
-          value: "mymaster"
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "kafka:9092"
-        - name: KAFKA_PAYMENT_TOPIC
-          value: "payment-events"
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: payment-service-config
-              key: db.host
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: payment-service-config
-              key: db.port
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: payment-service-config
-              key: db.name
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: payment-service-secret
-              key: db.username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: payment-service-secret
-              key: db.password
-        - name: PG_API_KEY  # 결제 게이트웨이 API 키
-          valueFrom:
-            secretKeyRef:
-              name: payment-service-secret
-              key: pg.api.key
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8082
-          initialDelaySeconds: 90
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /actuator/health/readiness
-            port: 8082
-          initialDelaySeconds: 45
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3

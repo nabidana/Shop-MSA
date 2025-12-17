@@ -6,5 +6,4 @@ resources:
   - service.yaml
 
 commonLabels:
-  app: settlement-service
-  managed-by: kustomize
+  component: settlement-service

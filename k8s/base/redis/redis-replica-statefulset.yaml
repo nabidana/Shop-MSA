@@ -1,50 +1,60 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis-slave
+  name: redis-replica
+  namespace: shop-msa
   labels:
     app: redis
-    role: slave
+    role: replica
 spec:
-  serviceName: redis-slave
-  replicas: 2  # Slave 2개 (고가용성)
+  serviceName: redis-replica
+  replicas: 2  # Replica 2개 유지
   selector:
     matchLabels:
       app: redis
-      role: slave
+      role: replica
   template:
     metadata:
       labels:
         app: redis
-        role: slave
+        role: replica
     spec:
       containers:
       - name: redis
-        image: redis:7-alpine
+        # image: redis:7.2.7-alpine3.22 # 가장 보편화된 안정적인 버전
+        image : redis:8.4.0-alpine3.22 # 최신버전
+        command:
+          - redis-server
+          - --slaveof
+          - redis-master
+          - "6379"
+          - --save
+          - "900"
+          - "1"
+          - --save
+          - "300"
+          - "10"
         ports:
         - containerPort: 6379
           name: redis
-        command:
-        - redis-server
-        args:
-        - /etc/redis/slave.conf
+          protocol: TCP
         volumeMounts:
-        - name: redis-config
-          mountPath: /etc/redis
-        - name: redis-data
+        - name: data
           mountPath: /data
         resources:
           requests:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "250m"
           limits:
             memory: "512Mi"
-            cpu: "200m"
+            cpu: "500m"
         livenessProbe:
           tcpSocket:
             port: 6379
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
@@ -52,13 +62,11 @@ spec:
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5
-      volumes:
-      - name: redis-config
-        configMap:
-          name: redis-config
+          timeoutSeconds: 3
+  # 영구 볼륨 클레임 템플릿
   volumeClaimTemplates:
   - metadata:
-      name: redis-data
+      name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

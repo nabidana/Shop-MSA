@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base 참조
+bases:
+  - ../../base
+
+# 테스트 환경 레이블 추가
+commonLabels:
+  environment: test
+
+# 네임스페이스 (선택사항 - 별도 네임스페이스 사용 시)
+# namespace: microservices-test
+
+# 애플리케이션 서비스는 제외하고 인프라만 배포
+# Base의 리소스 중 필요한 것만 선택적으로 포함
+resources:
+  - infrastructure-only.yaml
+
+# 테스트 환경 패치 적용
+patchesStrategicMerge:
+  - patches/replica-patch.yaml
+  - patches/resource-patch.yaml
+  - patches/storage-patch.yaml
+
+# ConfigMap 생성 (테스트 환경 설정)
+configMapGenerator:
+  - name: app-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=test
+      - LOG_LEVEL=DEBUG
+
+# Secret 생성 (테스트 환경용)
+secretGenerator:
+  - name: postgres-secret
+    behavior: merge
+    literals:
+      - postgres-password=test_postgres_password
+      - userservice-password=test_user_password
+      - paymentservice-password=test_payment_password
+      - settlementservice-password=test_settlement_password
+      - partnerservice-password=test_partner_password
+      - accountingservice-password=test_accounting_password
