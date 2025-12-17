@@ -50,7 +50,7 @@ fi
 # 네임스페이스 생성
 echo ""
 echo "📦 네임스페이스 생성 중..."
-kubectl create namespace microservices --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace shop-msa --dry-run=client -o yaml | kubectl apply -f -
 
 # 테스트 환경 인프라 배포
 echo ""
@@ -70,17 +70,17 @@ echo ""
 
 # Pod 상태 확인
 echo "📊 Pod 상태:"
-kubectl get pods -n microservices -l component=postgresql -o wide
-kubectl get pods -n microservices -l component=redis-sentinel -o wide
-kubectl get pods -n microservices -l component=kafka-cluster -o wide
+kubectl get pods -n shop-msa -l component=postgresql -o wide
+kubectl get pods -n shop-msa -l component=redis-sentinel -o wide
+kubectl get pods -n shop-msa -l component=kafka-cluster -o wide
 
 echo ""
 echo "📊 Service 상태:"
-kubectl get svc -n microservices
+kubectl get svc -n shop-msa
 
 echo ""
 echo "📊 PersistentVolumeClaim 상태:"
-kubectl get pvc -n microservices
+kubectl get pvc -n shop-msa
 
 echo ""
 echo "========================================="
@@ -90,45 +90,45 @@ echo ""
 echo "📝 연결 정보:"
 echo ""
 echo "🐘 PostgreSQL:"
-echo "  Host: postgresql.microservices.svc.cluster.local"
+echo "  Host: postgresql.shop-msa.svc.cluster.local"
 echo "  Port: 5432"
 echo "  Databases: userdb, paymentdb, settlementdb, partnerdb, accountingdb"
 echo "  Username: {service}service (예: userservice)"
 echo "  Password: test_{service}_password"
 echo ""
 echo "  # Pod 내부에서 접속:"
-echo "  kubectl exec -it postgresql-0 -n microservices -- psql -U postgres"
+echo "  kubectl exec -it postgresql-0 -n shop-msa -- psql -U postgres"
 echo ""
 echo "  # 로컬에서 Port Forward:"
-echo "  kubectl port-forward svc/postgresql 5432:5432 -n microservices"
+echo "  kubectl port-forward svc/postgresql 5432:5432 -n shop-msa"
 echo "  psql -h localhost -U postgres"
 echo ""
 echo "🔴 Redis:"
-echo "  Master: redis-master.microservices.svc.cluster.local:6379"
-echo "  Sentinel: redis-sentinel.microservices.svc.cluster.local:26379"
+echo "  Master: redis-master.shop-msa.svc.cluster.local:6379"
+echo "  Sentinel: redis-sentinel.shop-msa.svc.cluster.local:26379"
 echo ""
 echo "  # Redis CLI 접속:"
-echo "  kubectl exec -it redis-master-0 -n microservices -- redis-cli"
+echo "  kubectl exec -it redis-master-0 -n shop-msa -- redis-cli"
 echo ""
 echo "  # 로컬에서 Port Forward:"
-echo "  kubectl port-forward svc/redis-master 6379:6379 -n microservices"
+echo "  kubectl port-forward svc/redis-master 6379:6379 -n shop-msa"
 echo ""
 echo "📨 Kafka:"
-echo "  Bootstrap Servers: kafka.microservices.svc.cluster.local:9092"
+echo "  Bootstrap Servers: kafka.shop-msa.svc.cluster.local:9092"
 echo ""
 echo "  # Kafka 토픽 확인:"
-echo "  kubectl exec -it kafka-0 -n microservices -- kafka-topics --list --bootstrap-server localhost:9092"
+echo "  kubectl exec -it kafka-0 -n shop-msa -- kafka-topics --list --bootstrap-server localhost:9092"
 echo ""
 echo "  # 로컬에서 Port Forward:"
-echo "  kubectl port-forward svc/kafka 9092:9092 -n microservices"
+echo "  kubectl port-forward svc/kafka 9092:9092 -n shop-msa"
 echo ""
 echo "========================================="
 echo "💡 유용한 명령어:"
-echo "  - Pod 로그 확인: kubectl logs -f <pod-name> -n microservices"
-echo "  - Pod 상태 모니터링: kubectl get pods -n microservices -w"
+echo "  - Pod 로그 확인: kubectl logs -f <pod-name> -n shop-msa"
+echo "  - Pod 상태 모니터링: kubectl get pods -n shop-msa -w"
 echo "  - 인프라 종료: ./stop-test-infra.sh"
 echo "========================================="
 echo ""
 echo "⏰ 모든 Pod가 Ready 상태가 될 때까지 기다려주세요."
-echo "   상태 확인: kubectl get pods -n microservices -w"
+echo "   상태 확인: kubectl get pods -n shop-msa -w"
 echo ""

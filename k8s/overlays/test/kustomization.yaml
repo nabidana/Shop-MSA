@@ -2,26 +2,36 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base 참조
-bases:
-  - ../../base
+# bases:
+#   - ../../base
 
 # 테스트 환경 레이블 추가
-commonLabels:
-  environment: test
+# commonLabels:
+#   environment: test
 
 # 네임스페이스 (선택사항 - 별도 네임스페이스 사용 시)
-# namespace: microservices-test
+# namespace: shop-msa
 
 # 애플리케이션 서비스는 제외하고 인프라만 배포
 # Base의 리소스 중 필요한 것만 선택적으로 포함
+# components:
+  # - infrastructure-only.yaml
 resources:
-  - infrastructure-only.yaml
+# 네임스페이스
+  - ../../base/infrastructure
+
+labels:
+  - pairs:
+      environment: test
 
 # 테스트 환경 패치 적용
-patchesStrategicMerge:
-  - patches/replica-patch.yaml
-  - patches/resource-patch.yaml
-  - patches/storage-patch.yaml
+patches:
+  - path: patches/replica-patch.yaml
+  - path: patches/resource-patch.yaml
+  - path: patches/storage-patch.yaml
+  - path: patches/postgre-secret.yaml
+  - path: patches/zookeeper-standalone-patch.yaml
+  - path: patches/kafka-standalone-patch.yaml
 
 # ConfigMap 생성 (테스트 환경 설정)
 configMapGenerator:
@@ -31,13 +41,13 @@ configMapGenerator:
       - LOG_LEVEL=DEBUG
 
 # Secret 생성 (테스트 환경용)
-secretGenerator:
-  - name: postgres-secret
-    behavior: merge
-    literals:
-      - postgres-password=test_postgres_password
-      - userservice-password=test_user_password
-      - paymentservice-password=test_payment_password
-      - settlementservice-password=test_settlement_password
-      - partnerservice-password=test_partner_password
-      - accountingservice-password=test_accounting_password
+# secretGenerator:
+#   - name: postgres-secret
+#     behavior: merge
+#     literals:
+#       - postgres-password=test_postgres_password
+#       - userservice-password=test_user_password
+#       - paymentservice-password=test_payment_password
+#       - settlementservice-password=test_settlement_password
+#       - partnerservice-password=test_partner_password
+#       - accountingservice-password=test_accounting_password

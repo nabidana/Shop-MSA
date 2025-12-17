@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgresql
-  namespace: microservices
+  namespace: shop-msa
   labels:
     app: postgresql
 spec:
@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
       - name: postgresql
-        image: postgres:15-alpine
+        image: postgres:16.11-bookworm # Non-Alpine 버전 - 모든 확장 설치 및 디버깅 검색 자료 많음
+        # image: postgres:15-alpine  # Alpine 버전은 용량이 작음 (~238MB vs ~376MB)
         ports:
         - containerPort: 5432
           name: postgres

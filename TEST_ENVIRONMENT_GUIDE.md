@@ -24,7 +24,7 @@
 ### 1. 인프라 실행
 
 ```bash
-cd k8s-microservices/scripts
+cd k8s/scripts
 ./start-test-infra.sh
 ```
 
@@ -32,7 +32,7 @@ cd k8s-microservices/scripts
 
 ```bash
 # Pod 상태 확인
-kubectl get pods -n microservices -w
+kubectl get pods -n shop-msa -w
 
 # 모든 Pod가 Running 상태가 될 때까지 대기 (약 2-3분)
 ```
@@ -52,7 +52,7 @@ cd ../user-service
 ### 4. 인프라 종료
 
 ```bash
-cd k8s-microservices/scripts
+cd k8s/scripts
 ./stop-test-infra.sh
 ```
 
@@ -62,14 +62,14 @@ cd k8s-microservices/scripts
 
 #### Kubernetes 내부에서 접근
 ```yaml
-Host: postgresql.microservices.svc.cluster.local
+Host: postgresql.shop-msa.svc.cluster.local
 Port: 5432
 ```
 
 #### 로컬에서 접근 (Port Forward)
 ```bash
 # Port Forward 시작
-kubectl port-forward svc/postgresql 5432:5432 -n microservices
+kubectl port-forward svc/postgresql 5432:5432 -n shop-msa
 
 # 다른 터미널에서 접속
 psql -h localhost -p 5432 -U postgres
@@ -95,14 +95,14 @@ spring:
 
 #### Kubernetes 내부에서 접근
 ```yaml
-Master: redis-master.microservices.svc.cluster.local:6379
-Sentinel: redis-sentinel.microservices.svc.cluster.local:26379
+Master: redis-master.shop-msa.svc.cluster.local:6379
+Sentinel: redis-sentinel.shop-msa.svc.cluster.local:26379
 ```
 
 #### 로컬에서 접근 (Port Forward)
 ```bash
 # Port Forward 시작
-kubectl port-forward svc/redis-master 6379:6379 -n microservices
+kubectl port-forward svc/redis-master 6379:6379 -n shop-msa
 
 # Redis CLI 접속
 redis-cli -h localhost -p 6379
@@ -121,13 +121,13 @@ spring:
 
 #### Kubernetes 내부에서 접근
 ```yaml
-Bootstrap Servers: kafka.microservices.svc.cluster.local:9092
+Bootstrap Servers: kafka.shop-msa.svc.cluster.local:9092
 ```
 
 #### 로컬에서 접근 (Port Forward)
 ```bash
 # Port Forward 시작
-kubectl port-forward svc/kafka 9092:9092 -n microservices
+kubectl port-forward svc/kafka 9092:9092 -n shop-msa
 
 # Spring Boot application.yml 설정
 spring:
@@ -189,22 +189,22 @@ logging:
 
 ```bash
 # Pod 상태 확인
-kubectl get pods -n microservices
+kubectl get pods -n shop-msa
 
 # Pod 로그 확인
-kubectl logs -f postgresql-0 -n microservices
-kubectl logs -f redis-master-0 -n microservices
-kubectl logs -f kafka-0 -n microservices
+kubectl logs -f postgresql-0 -n shop-msa
+kubectl logs -f redis-master-0 -n shop-msa
+kubectl logs -f kafka-0 -n shop-msa
 
 # Pod 재시작
-kubectl delete pod postgresql-0 -n microservices
+kubectl delete pod postgresql-0 -n shop-msa
 ```
 
 ### PostgreSQL 관리
 
 ```bash
 # PostgreSQL Pod 접속
-kubectl exec -it postgresql-0 -n microservices -- psql -U postgres
+kubectl exec -it postgresql-0 -n shop-msa -- psql -U postgres
 
 # 데이터베이스 목록 확인
 \l
@@ -223,7 +223,7 @@ SELECT * FROM users;
 
 ```bash
 # Redis CLI 접속
-kubectl exec -it redis-master-0 -n microservices -- redis-cli
+kubectl exec -it redis-master-0 -n shop-msa -- redis-cli
 
 # 키 확인
 KEYS *
@@ -239,7 +239,7 @@ INFO replication
 
 ```bash
 # Kafka Pod 접속
-kubectl exec -it kafka-0 -n microservices -- bash
+kubectl exec -it kafka-0 -n shop-msa -- bash
 
 # 토픽 목록 확인
 kafka-topics --list --bootstrap-server localhost:9092
@@ -271,9 +271,9 @@ kafka-console-consumer --topic test-topic \
 # port-forward-all.sh
 
 # 백그라운드에서 실행
-kubectl port-forward svc/postgresql 5432:5432 -n microservices &
-kubectl port-forward svc/redis-master 6379:6379 -n microservices &
-kubectl port-forward svc/kafka 9092:9092 -n microservices &
+kubectl port-forward svc/postgresql 5432:5432 -n shop-msa &
+kubectl port-forward svc/redis-master 6379:6379 -n shop-msa &
+kubectl port-forward svc/kafka 9092:9092 -n shop-msa &
 
 echo "Port Forward 실행 중..."
 echo "PostgreSQL: localhost:5432"
@@ -317,13 +317,13 @@ pkill -f 'kubectl port-forward'
 
 ```bash
 # Pod 상태 확인
-kubectl describe pod <pod-name> -n microservices
+kubectl describe pod <pod-name> -n shop-msa
 
 # 이벤트 확인
-kubectl get events -n microservices --sort-by='.lastTimestamp'
+kubectl get events -n shop-msa --sort-by='.lastTimestamp'
 
 # 로그 확인
-kubectl logs <pod-name> -n microservices
+kubectl logs <pod-name> -n shop-msa
 ```
 
 ### Port Forward 연결 실패
@@ -336,7 +336,7 @@ ps aux | grep 'kubectl port-forward'
 pkill -f 'kubectl port-forward'
 
 # 다시 시작
-kubectl port-forward svc/postgresql 5432:5432 -n microservices
+kubectl port-forward svc/postgresql 5432:5432 -n shop-msa
 ```
 
 ### 데이터 초기화
@@ -346,7 +346,7 @@ kubectl port-forward svc/postgresql 5432:5432 -n microservices
 ./stop-test-infra.sh
 
 # PVC 삭제 (데이터 완전 삭제)
-kubectl delete pvc --all -n microservices
+kubectl delete pvc --all -n shop-msa
 
 # 인프라 재시작
 ./start-test-infra.sh

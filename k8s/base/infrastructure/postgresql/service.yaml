@@ -4,7 +4,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgresql-headless
-  namespace: microservices
+  namespace: shop-msa
   labels:
     app: postgresql
 spec:
@@ -25,7 +25,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgresql
-  namespace: microservices
+  namespace: shop-msa
   labels:
     app: postgresql
 spec:

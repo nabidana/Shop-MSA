@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgresql
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-master
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:
@@ -46,7 +46,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-replica
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:
@@ -66,7 +66,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-sentinel
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:
@@ -86,7 +86,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:
@@ -106,7 +106,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: microservices
+  namespace: shop-msa
 spec:
   template:
     spec:

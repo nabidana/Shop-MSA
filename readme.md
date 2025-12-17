@@ -117,6 +117,9 @@ cd k8s-microservices
 # 각 서비스의 Docker 이미지를 빌드하고 레지스트리에 푸시
 # overlays/dev/kustomization.yaml 또는 overlays/prod/kustomization.yaml의
 # images 섹션에서 이미지 경로를 수정하세요
+
+# 환경을 실행하기 전에 scripts 파일에 권한부여
+chmod +x *
 ```
 
 ### 3. 개발 환경 배포
@@ -128,7 +131,7 @@ cd scripts
 ### 4. 배포 확인
 ```bash
 # Pod 상태 확인
-kubectl get pods -n microservices -w
+kubectl get pods -n shop-msa -w
 
 # 서비스 접속 테스트 (NodePort)
 curl http://<node-ip>:30080/actuator/health

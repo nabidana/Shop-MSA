@@ -39,8 +39,8 @@ kubectl config current-context
 echo ""
 
 # 네임스페이스 존재 확인
-if ! kubectl get namespace microservices &> /dev/null; then
-    echo "ℹ️  microservices 네임스페이스가 존재하지 않습니다."
+if ! kubectl get namespace shop-msa &> /dev/null; then
+    echo "ℹ️  shop-msa 네임스페이스가 존재하지 않습니다."
     echo "이미 삭제되었거나 배포되지 않은 상태입니다."
     exit 0
 fi
@@ -70,14 +70,14 @@ fi
 # StatefulSet의 PVC 삭제 여부 확인
 echo ""
 echo "📊 남아있는 PersistentVolumeClaim 확인:"
-if kubectl get pvc -n microservices 2> /dev/null | grep -q .; then
-    kubectl get pvc -n microservices
+if kubectl get pvc -n shop-msa 2> /dev/null | grep -q .; then
+    kubectl get pvc -n shop-msa
     echo ""
     read -p "PersistentVolumeClaim도 삭제하시겠습니까? (데이터가 영구 삭제됩니다) (y/N): " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "🗑️  PVC 삭제 중..."
-        kubectl delete pvc --all -n microservices
+        kubectl delete pvc --all -n shop-msa
         echo "✅ PVC가 삭제되었습니다."
     else
         echo "ℹ️  PVC는 유지됩니다. 다음 배포 시 기존 데이터를 재사용합니다."
@@ -92,7 +92,7 @@ read -p "네임스페이스도 삭제하시겠습니까? (다른 리소스가 �
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🗑️  네임스페이스 삭제 중..."
-    kubectl delete namespace microservices --timeout=60s
+    kubectl delete namespace shop-msa --timeout=60s
     echo "✅ 네임스페이스가 삭제되었습니다."
 else
     echo "ℹ️  네임스페이스는 유지됩니다."

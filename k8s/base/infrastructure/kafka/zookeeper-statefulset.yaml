@@ -27,15 +27,39 @@ spec:
           name: server
         - containerPort: 3888
           name: leader-election
+        # ✅ command로 SERVER_ID 설정 후 실행
+        command:
+        - bash
+        - -c
+        - |
+          set -ex
+          
+          # Pod 이름에서 숫자 추출 (zookeeper-0 -> 0)
+          ORDINAL=$(echo $HOSTNAME | sed 's/[^0-9]*//g')
+          
+          # Zookeeper는 1부터 시작
+          export ZOOKEEPER_SERVER_ID=$((ORDINAL + 1))
+          
+          echo "Hostname: $HOSTNAME"
+          echo "Server ID: $ZOOKEEPER_SERVER_ID"
+          
+          # 원래 entrypoint 실행
+          exec /etc/confluent/docker/run
+
         env:
         # Zookeeper ID (StatefulSet ordinal 사용)
-        - name: ZOOKEEPER_SERVER_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+
+        # Confluent Zookeeper 이미지는 ZOOKEEPER_SERVER_ID 환경변수가 잇으면, 우선적으로 사용하기 때문에, myid파일을 무시함
+        # fieldPath: metadata.name 는 zookeeper-0, zookeeper-1, zookeeper-2 형태이므로, myid 파일과 맞지 않음
+
+        # - name: ZOOKEEPER_SERVER_ID
+        #   valueFrom:
+        #     fieldRef:
+        #       fieldPath: metadata.name
         # Zookeeper 앙상블 구성
         - name: ZOOKEEPER_SERVERS
-          value: "zookeeper-0.zookeeper-headless.microservices.svc.cluster.local:2888:3888;zookeeper-1.zookeeper-headless.microservices.svc.cluster.local:2888:3888;zookeeper-2.zookeeper-headless.microservices.svc.cluster.local:2888:3888"
+          value: "zookeeper-0.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888;zookeeper-1.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888;zookeeper-2.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888"
+          # value: "server.1=zookeeper-0.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888;server.2=zookeeper-1.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888;server.3=zookeeper-2.zookeeper-headless.shop-msa.svc.cluster.local:2888:3888"
         - name: ZOOKEEPER_CLIENT_PORT
           value: "2181"
         - name: ZOOKEEPER_TICK_TIME
@@ -64,14 +88,21 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - 'echo "ruok" | nc localhost 2181 | grep imok'
+          tcpSocket:
+            port: 2181
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
+          failureThreshold: 3
+        # readinessProbe:
+        #   exec:
+        #     command:
+        #     - sh
+        #     - -c
+        #     - 'echo "ruok" | nc localhost 2181 | grep imok'
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 5
+        #   timeoutSeconds: 3
   # 영구 볼륨 클레임 템플릿
   volumeClaimTemplates:
   - metadata:

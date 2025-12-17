@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgresql
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1  # 테스트는 단일 인스턴스
 
@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-master
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1
 
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-replica
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1  # 테스트는 1개만
 
@@ -36,7 +36,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-sentinel
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1  # 테스트는 1개만 (운영은 3개 권장)
 
@@ -46,7 +46,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1  # 테스트는 단일 노드
 
@@ -56,6 +56,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: microservices
+  namespace: shop-msa
 spec:
   replicas: 1  # 테스트는 단일 브로커

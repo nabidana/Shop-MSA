@@ -1,0 +1,50 @@
+# 테스트 환경 Zookeeper 단일 노드 설정
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: shop-msa
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: zookeeper
+        env:
+        # 단일 노드 설정 (Server ID는 자동으로 0이 됨)
+        - name: ZOOKEEPER_SERVER_ID
+          value: "1"
+        # 단일 서버 - ZOOKEEPER_SERVERS 제거 (단일 모드)
+        - name: ZOOKEEPER_SERVERS
+          value: ""
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name: ZOOKEEPER_INIT_LIMIT
+          value: "10"
+        - name: ZOOKEEPER_SYNC_LIMIT
+          value: "5"
+        # 4LW 명령어 활성화
+        - name: ZOOKEEPER_4LW_COMMANDS_WHITELIST
+          value: "srvr,mntr,ruok,conf,stat"
+
+        # Readiness Probe 수정 (nc 대신 TCP 체크)
+        readinessProbe:
+          $patch: replace
+          tcpSocket:
+            port: 2181
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Liveness Probe도 TCP로 변경
+        livenessProbe:
+          $patch: replace
+          tcpSocket:
+            port: 2181
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
