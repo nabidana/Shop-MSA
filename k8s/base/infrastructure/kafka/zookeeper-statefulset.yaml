@@ -68,6 +68,14 @@ spec:
           value: "5"
         - name: ZOOKEEPER_SYNC_LIMIT
           value: "2"
+        # 기존 환경 변수들...
+
+        # Confluent 이미지는 언더스코어 대신 점(.)을 사용
+        # - name: ZOOKEEPER_4LW_COMMANDS_WHITELIST
+        #   value: "*"
+        # value: "srvr,mntr,ruok,conf,stat"
+        - name: KAFKA_OPTS
+          value: "-Dzookeeper.4lw.commands.whitelist=*"
         volumeMounts:
         - name: data
           mountPath: /var/lib/zookeeper/data

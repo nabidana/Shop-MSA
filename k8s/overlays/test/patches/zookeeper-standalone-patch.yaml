@@ -26,8 +26,13 @@ spec:
         - name: ZOOKEEPER_SYNC_LIMIT
           value: "5"
         # 4LW 명령어 활성화
-        - name: ZOOKEEPER_4LW_COMMANDS_WHITELIST
-          value: "srvr,mntr,ruok,conf,stat"
+        - name: KAFKA_OPTS
+          value: "-Dzookeeper.4lw.commands.whitelist=*"
+        # - name: ZOOKEEPER_4LW_COMMANDS_WHITELIST
+        #   value: "*"
+        # 필요한 명령어만
+        # - name: ZOOKEEPER_4LW_COMMANDS_WHITELIST
+        #   value: "srvr,mntr,ruok,conf,stat"
 
         # Readiness Probe 수정 (nc 대신 TCP 체크)
         readinessProbe:

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: redis-sentinel
 spec:
-  serviceName: redis-sentinel
+  serviceName: redis-sentinel-headless
   replicas: 3  # Sentinel은 3개 유지 (쿼럼을 위해 홀수 권장)
   selector:
     matchLabels:
@@ -17,9 +17,30 @@ spec:
         app: redis-sentinel
     spec:
       initContainers:
+      # Master DNS가 준비될 때까지 대기
+      - name: wait-for-master
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Redis Master DNS..."
+          until nslookup redis-master-0.redis-master-headless.shop-msa.svc.cluster.local; do
+            echo "Master DNS not ready, waiting 5 seconds..."
+            sleep 5
+          done
+          echo "✓ Master DNS ready!"
+          
+          # Master가 실제로 응답할 때까지 대기
+          echo "Waiting for Redis Master to respond..."
+          until nc -zv redis-master-0.redis-master-headless.shop-msa.svc.cluster.local 6379; do
+            echo "Master not responding, waiting 5 seconds..."
+            sleep 5
+          done
+          echo "✓ Master is ready!"
       # Sentinel 설정 파일 초기화
       - name: init-sentinel-config
-        image: redis:7.2-alpine
+        image: redis:8.4.0-alpine3.22
         command:
           - sh
           - -c
@@ -29,14 +50,40 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /readonly-config
+          readOnly: true
         - name: sentinel-config
           mountPath: /etc/redis
       containers:
       - name: sentinel
         image : redis:8.4.0-alpine3.22
         command:
-          - redis-sentinel
-          - /etc/redis/sentinel.conf
+          # - redis-sentinel
+          # - /etc/redis/sentinel.conf
+        - sh
+        - -c
+        - |
+          echo "========================================="
+          echo "Sentinel Startup - DNS Check"
+          echo "========================================="
+          
+          # DNS 재확인
+          echo "Verifying Master DNS..."
+          if ! nslookup redis-master-0.redis-master-headless.shop-msa.svc.cluster.local; then
+            echo "✗ Master DNS lookup failed!"
+            exit 1
+          fi
+          echo "✓ Master DNS OK"
+          
+          # Master 연결 재확인
+          echo "Verifying Master connection..."
+          if ! nc -zv redis-master-0.redis-master-headless.shop-msa.svc.cluster.local 6379; then
+            echo "✗ Master connection failed!"
+            exit 1
+          fi
+          echo "✓ Master connection OK"
+          
+          echo "Starting Redis Sentinel..."
+          exec redis-sentinel /etc/redis/sentinel.conf
         ports:
         - containerPort: 26379
           name: sentinel

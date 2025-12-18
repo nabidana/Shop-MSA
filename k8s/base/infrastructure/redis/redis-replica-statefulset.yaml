@@ -7,7 +7,7 @@ metadata:
     app: redis
     role: replica
 spec:
-  serviceName: redis-replica
+  serviceName: redis-replica-headless
   replicas: 2  # Replica 2개 유지
   selector:
     matchLabels:

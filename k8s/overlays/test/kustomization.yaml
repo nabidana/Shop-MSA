@@ -30,8 +30,9 @@ patches:
   - path: patches/resource-patch.yaml
   - path: patches/storage-patch.yaml
   - path: patches/postgre-secret.yaml
-  - path: patches/zookeeper-standalone-patch.yaml
   - path: patches/kafka-standalone-patch.yaml
+  - path: patches/zookeeper-standalone-patch.yaml
+  - path: patches/redis-config-patch.yaml
 
 # ConfigMap 생성 (테스트 환경 설정)
 configMapGenerator:

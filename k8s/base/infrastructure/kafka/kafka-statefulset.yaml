@@ -26,23 +26,34 @@ spec:
 
         # ✅ command로 BROKER_ID 설정
         command:
-        - bash
-        - -c
+        - sh
+        - -exc
         - |
-          set -ex
+          echo "========================================="
+          echo "Kafka Startup Script"
+          echo "========================================="
+
+          # Broker ID
+          export KAFKA_BROKER_ID=0
+          echo "✓ Broker ID: ${KAFKA_BROKER_ID}"
           
-          # Pod 이름에서 숫자 추출 (kafka-0 -> 0)
-          ORDINAL=$(echo $HOSTNAME | sed 's/[^0-9]*//g')
+          # Zookeeper 연결 재확인
+          echo "Final Zookeeper check..."
+          if ! nc -zv zookeeper-0.zookeeper-headless.shop-msa.svc.cluster.local 2181; then
+            echo "✗ Zookeeper connection lost!"
+            exit 1
+          fi
+          echo "✓ Zookeeper: OK"
           
-          # Broker ID 설정
-          export KAFKA_BROKER_ID=$ORDINAL
+          # 환경 변수 출력
+          echo "========================================="
+          echo "Environment Variables:"
+          env | grep KAFKA_ | sort
+          echo "========================================="
           
-          echo "Hostname: $HOSTNAME"
-          echo "Broker ID: $KAFKA_BROKER_ID"
-          
-          # 원래 entrypoint 실행
+          # Kafka 실행
+          echo "Starting Kafka server..."
           exec /etc/confluent/docker/run
-        
         env:
         # 브로커 ID (StatefulSet ordinal 사용)
         # - name: KAFKA_BROKER_ID
@@ -61,6 +72,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
         # 복제 설정
         - name: KAFKA_DEFAULT_REPLICATION_FACTOR
           value: "2"

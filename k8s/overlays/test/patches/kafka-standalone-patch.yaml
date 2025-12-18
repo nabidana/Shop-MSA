@@ -8,20 +8,121 @@ spec:
   replicas: 1
   template:
     spec:
+      # Service 환경 변수 자동 생성 비활성화
+      enableServiceLinks: false
+      # Zookeeper 대기 initContainer
+      initContainers:
+      - name: wait-for-zookeeper
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          echo "========================================="
+          echo "Waiting for Zookeeper..."
+          echo "========================================="
+          
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+          
+          until nc -zv zookeeper-0.zookeeper-headless.shop-msa.svc.cluster.local 2181; do
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "✗ Zookeeper not available after ${MAX_RETRIES} retries"
+              exit 1
+            fi
+            echo "Retry ${RETRY_COUNT}/${MAX_RETRIES}: Waiting 5 seconds..."
+            sleep 5
+          done
+          
+          echo "✓ Zookeeper is ready!"
+          echo "Waiting 10 seconds for full initialization..."
+          sleep 10
+          echo "✓ Ready to start Kafka"
       containers:
       - name: kafka
+        command:
+        - sh
+        - -exc
+        - |
+          echo "========================================="
+          echo "Kafka Manual Startup"
+          echo "========================================="
+          
+          export KAFKA_BROKER_ID=0
+          echo "Broker ID: ${KAFKA_BROKER_ID}"
+          
+          # 환경 변수 출력
+          echo "========================================="
+          echo "Environment Variables:"
+          env | grep KAFKA_ | sort
+          echo "========================================="
+          
+          # Confluent 스크립트 실행 (stderr도 캡처)
+          echo "Running Confluent configuration script..."
+          /etc/confluent/docker/run 2>&1 &
+          
+          # PID 저장
+          KAFKA_PID=$!
+          
+          # 30초 동안 Kafka 프로세스 모니터링
+          for i in {1..30}; do
+            if ! kill -0 $KAFKA_PID 2>/dev/null; then
+              echo "✗ Kafka process died after $i seconds!"
+              echo "Checking logs..."
+              
+              # Kafka 로그 출력
+              if [ -f /var/log/kafka/server.log ]; then
+                echo "=== Kafka Server Log ==="
+                tail -100 /var/log/kafka/server.log
+              fi
+              
+              if [ -f /var/log/kafka/kafkaServer.out ]; then
+                echo "=== Kafka Output ==="
+                tail -100 /var/log/kafka/kafkaServer.out
+              fi
+              
+              exit 1
+            fi
+            
+            # Kafka 포트 체크
+            if nc -zv localhost 9092 2>&1 | grep -q succeeded; then
+              echo "✓ Kafka is listening on port 9092"
+              break
+            fi
+            
+            echo "Waiting for Kafka to start... ($i/30)"
+            sleep 1
+          done
+          
+          # 메인 프로세스로 대기
+          echo "✓ Kafka started successfully"
+          wait $KAFKA_PID
         env:
         # 브로커 ID
-        - name: KAFKA_BROKER_ID
-          value: "0"
+        # - name: KAFKA_BROKER_ID
+        #   value: "0"
+        # 리스너 설정
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka-0.kafka-headless.shop-msa.svc.cluster.local:9092"
+
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://:9092"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+
         # Zookeeper 연결 (단일 노드)
         - name: KAFKA_ZOOKEEPER_CONNECT
           value: "zookeeper-0.zookeeper-headless.shop-msa.svc.cluster.local:2181"
-        # 리스너 설정
-        - name: KAFKA_LISTENERS
-          value: "PLAINTEXT://:9092"
-        - name: KAFKA_ADVERTISED_LISTENERS
-          value: "PLAINTEXT://kafka-0.kafka-headless.shop-msa.svc.cluster.local:9092"
+
+        # 로그 레벨
+        - name: KAFKA_LOG4J_ROOT_LOGLEVEL
+          value: "INFO"
+        - name: KAFKA_TOOLS_LOG4J_LOGLEVEL
+          value: "ERROR"
+
         # 단일 브로커 설정 - 복제 계수 1
         - name: KAFKA_DEFAULT_REPLICATION_FACTOR
           value: "1"
@@ -43,6 +144,24 @@ spec:
         # 자동 토픽 생성
         - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
           value: "true"
+
         # JVM 힙 설정 (테스트 환경 - 낮춤)
         - name: KAFKA_HEAP_OPTS
           value: "-Xmx512M -Xms512M"
+
+        livenessProbe:
+          $patch: replace
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          $patch: replace
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: shop-msa
+data:
+  redis-sentinel.conf: |
+    port 26379
+    # 단일 Sentinel이므로 quorum=1
+    sentinel resolve-hostnames yes
+    sentinel monitor mymaster redis-master-0.redis-master-headless.shop-msa.svc.cluster.local 6379 1
+    sentinel down-after-milliseconds mymaster 5000
+    sentinel failover-timeout mymaster 10000
+    sentinel parallel-syncs mymaster 1

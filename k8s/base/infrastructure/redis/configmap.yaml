@@ -33,7 +33,7 @@ data:
     port 26379
     
     # Master 모니터링 설정
-    sentinel monitor mymaster redis-master 6379 2
+    sentinel monitor mymaster redis-master-0.redis-master-headless.shop-msa.svc.cluster.local 6379 2
     
     # Master 다운 판단 시간 (밀리초)
     sentinel down-after-milliseconds mymaster 5000

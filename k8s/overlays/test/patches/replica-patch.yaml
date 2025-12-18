@@ -42,20 +42,22 @@ spec:
 
 ---
 # Zookeeper
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: zookeeper
-  namespace: shop-msa
-spec:
-  replicas: 1  # 테스트는 단일 노드
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: zookeeper
+#   namespace: shop-msa
+# spec:
+#   replicas: 1  
+# 테스트는 단일 노드
 
 ---
 # Kafka
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: kafka
-  namespace: shop-msa
-spec:
-  replicas: 1  # 테스트는 단일 브로커
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: kafka
+#   namespace: shop-msa
+# spec:
+#   replicas: 1  
+# 테스트는 단일 브로커
