@@ -1,0 +1,20 @@
+테스트
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=test
+
+개발
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+운영
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
+
+
+버전 확인 명렁어
+./mvnw dependency:tree
+
+# 1. 기존 빌드 정리
+./mvnw clean
+# 2. 의존성 재다운로드
+./mvnw dependency:resolve

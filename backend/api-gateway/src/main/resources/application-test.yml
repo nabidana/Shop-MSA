@@ -1,0 +1,38 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/**
+        
+        - id: payment-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/payments/**
+        
+        - id: settlement-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/settlements/**
+        
+        - id: partner-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/partners/**
+        
+        - id: accounting-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/accounting/**
+
+logging:
+  level:
+    root: INFO
+    "[com.payment.gateway]": DEBUG

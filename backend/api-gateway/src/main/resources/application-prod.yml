@@ -1,0 +1,60 @@
+spring:
+  data:
+    redis:
+      host: redis-master.shop-msa.svc.cluster.local
+      port: 6379
+  
+  cloud:
+    gateway:
+      # globalcors:
+      #   cors-configurations:
+      #     '[/**]':
+      #       allowedOriginPatterns:
+      #         - "https://yourdomain.com"
+      #         - "https://www.yourdomain.com"
+      #       allowedMethods:
+      #         - GET
+      #         - POST
+      #         - PUT
+      #         - DELETE
+      #       allowedHeaders: "*"
+      #       allowCredentials: true
+      #       maxAge: 3600
+      
+      routes:
+        - id: user-service
+          uri: http://user-service.shop-msa.svc.cluster.local:8081
+          predicates:
+            - Path=/api/users/**
+        
+        - id: payment-service
+          uri: http://payment-service.shop-msa.svc.cluster.local:8082
+          predicates:
+            - Path=/api/payments/**
+        
+        - id: settlement-service
+          uri: http://settlement-service.shop-msa.svc.cluster.local:8083
+          predicates:
+            - Path=/api/settlements/**
+        
+        - id: partner-service
+          uri: http://partner-service.shop-msa.svc.cluster.local:8084
+          predicates:
+            - Path=/api/partners/**
+        
+        - id: accounting-service
+          uri: http://accounting-service.shop-msa.svc.cluster.local:8085
+          predicates:
+            - Path=/api/accounting/**
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        waitDurationInOpenState: 60s
+        failureRateThreshold: 50
+
+logging:
+  level:
+    root: WARN
+    "[com.payment.gateway]": INFO

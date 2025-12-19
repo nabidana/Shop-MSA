@@ -30,29 +30,29 @@ echo ""
 
 # PostgreSQL Port Forward
 echo "📦 PostgreSQL: localhost:5432"
-kubectl port-forward svc/postgresql 5432:5432 -n microservices > /dev/null 2>&1 &
+kubectl port-forward svc/postgresql 5432:5432 -n shop-msa > /dev/null 2>&1 &
 POSTGRES_PID=$!
 
 sleep 1
 
 # Redis Port Forward
 echo "📦 Redis: localhost:6379"
-kubectl port-forward svc/redis-master 6379:6379 -n microservices > /dev/null 2>&1 &
+kubectl port-forward svc/redis-master 6379:6379 -n shop-msa > /dev/null 2>&1 &
 REDIS_PID=$!
 
 sleep 1
 
 # Kafka Port Forward
 echo "📦 Kafka: localhost:9092"
-kubectl port-forward svc/kafka 9092:9092 -n microservices > /dev/null 2>&1 &
+kubectl port-forward svc/kafka 9092:9092 -n shop-msa > /dev/null 2>&1 &
 KAFKA_PID=$!
 
 sleep 1
 
 # Redis Sentinel Port Forward (선택사항)
-# echo "📦 Redis Sentinel: localhost:26379"
-# kubectl port-forward svc/redis-sentinel 26379:26379 -n microservices > /dev/null 2>&1 &
-# SENTINEL_PID=$!
+echo "📦 Redis Sentinel: localhost:26379"
+kubectl port-forward svc/redis-sentinel 26379:26379 -n shop-msa > /dev/null 2>&1 &
+SENTINEL_PID=$!
 
 echo ""
 echo "========================================="
@@ -91,7 +91,7 @@ cleanup() {
     echo ""
     echo "🛑 Port Forward 종료 중..."
     kill $POSTGRES_PID $REDIS_PID $KAFKA_PID 2>/dev/null
-    # kill $SENTINEL_PID 2>/dev/null  # Sentinel 사용 시
+    kill $SENTINEL_PID 2>/dev/null  # Sentinel 사용 시
     echo "✅ 모든 Port Forward가 종료되었습니다."
     exit 0
 }
