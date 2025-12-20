@@ -19,113 +19,114 @@ spring:
   #     timeout: 3000ms
   
   # Spring Cloud Gateway 라우팅 설정
+  # 현재 왜인지 동작안하므로 config 직접설정
   cloud:
-    gateway:
-      routes:
-        # User Service
-        - id: user-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - StripPrefix=0
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-                methods: GET,POST,PUT,DELETE
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 500ms
-                  factor: 2
+  #   gateway:
+  #     routes:
+  #       # User Service
+  #       - id: user-service
+  #         uri: http://localhost:8081
+  #         predicates:
+  #           - Path=/api/users/**
+  #         filters:
+  #           - StripPrefix=0
+  #           - name: CircuitBreaker
+  #             args:
+  #               name: userServiceCircuitBreaker
+  #               fallbackUri: forward:/fallback/user-service
+  #           - name: Retry
+  #             args:
+  #               retries: 3
+  #               statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+  #               methods: GET,POST,PUT,DELETE
+  #               backoff:
+  #                 firstBackoff: 100ms
+  #                 maxBackoff: 500ms
+  #                 factor: 2
         
-        # Payment Service (중요 서비스)
-        - id: payment-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/payments/**
-          filters:
-            - StripPrefix=0
-            - name: CircuitBreaker
-              args:
-                name: paymentServiceCircuitBreaker
-                fallbackUri: forward:/fallback/payment-service
-            - name: Retry
-              args:
-                retries: 2 # 결제는 멱등성 보장이 어려우므로 재시도 줄임
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-                methods: GET # POST는 중복 결제 위험으로 제외
-                backoff:
-                  firstBackoff: 200ms
-                  maxBackoff: 1000ms
-                  factor: 2
+        # # Payment Service (중요 서비스)
+        # - id: payment-service
+        #   uri: http://localhost:8082
+        #   predicates:
+        #     - Path=/api/payments/**
+        #   filters:
+        #     - StripPrefix=0
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: paymentServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/payment-service
+        #     - name: Retry
+        #       args:
+        #         retries: 2 # 결제는 멱등성 보장이 어려우므로 재시도 줄임
+        #         statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+        #         methods: GET # POST는 중복 결제 위험으로 제외
+        #         backoff:
+        #           firstBackoff: 200ms
+        #           maxBackoff: 1000ms
+        #           factor: 2
         
-        # Settlement Service
-        - id: settlement-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/api/settlements/**
-          filters:
-            - StripPrefix=0
-            - name: CircuitBreaker
-              args:
-                name: settlementServiceCircuitBreaker
-                fallbackUri: forward:/fallback/settlement-service
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-                methods: GET,POST,PUT,DELETE
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 500ms
-                  factor: 2
+        # # Settlement Service
+        # - id: settlement-service
+        #   uri: http://localhost:8083
+        #   predicates:
+        #     - Path=/api/settlements/**
+        #   filters:
+        #     - StripPrefix=0
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: settlementServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/settlement-service
+        #     - name: Retry
+        #       args:
+        #         retries: 3
+        #         statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+        #         methods: GET,POST,PUT,DELETE
+        #         backoff:
+        #           firstBackoff: 100ms
+        #           maxBackoff: 500ms
+        #           factor: 2
         
-        # Partner Service
-        - id: partner-service
-          uri: http://localhost:8084
-          predicates:
-            - Path=/api/partners/**
-          filters:
-            - StripPrefix=0
-            - name: CircuitBreaker
-              args:
-                name: partnerServiceCircuitBreaker
-                fallbackUri: forward:/fallback/partner-service
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-                methods: GET,POST,PUT,DELETE
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 500ms
-                  factor: 2
+        # # Partner Service
+        # - id: partner-service
+        #   uri: http://localhost:8084
+        #   predicates:
+        #     - Path=/api/partners/**
+        #   filters:
+        #     - StripPrefix=0
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: partnerServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/partner-service
+        #     - name: Retry
+        #       args:
+        #         retries: 3
+        #         statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+        #         methods: GET,POST,PUT,DELETE
+        #         backoff:
+        #           firstBackoff: 100ms
+        #           maxBackoff: 500ms
+        #           factor: 2
         
-        # Accounting Service
-        - id: accounting-service
-          uri: http://localhost:8085
-          predicates:
-            - Path=/api/accounting/**
-          filters:
-            - StripPrefix=0
-            - name: CircuitBreaker
-              args:
-                name: accountingServiceCircuitBreaker
-                fallbackUri: forward:/fallback/accounting-service
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-                methods: GET,POST,PUT,DELETE
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 500ms
-                  factor: 2
+        # # Accounting Service
+        # - id: accounting-service
+        #   uri: http://localhost:8085
+        #   predicates:
+        #     - Path=/api/accounting/**
+        #   filters:
+        #     - StripPrefix=0
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: accountingServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/accounting-service
+        #     - name: Retry
+        #       args:
+        #         retries: 3
+        #         statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+        #         methods: GET,POST,PUT,DELETE
+        #         backoff:
+        #           firstBackoff: 100ms
+        #           maxBackoff: 500ms
+        #           factor: 2
       
       # 글로벌 CORS 설정
       # globalcors:
@@ -157,7 +158,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,gateway
+        include: "*"
+        # include: health,info,metrics,prometheus,gateway
       base-path: /actuator
   endpoint:
     health:

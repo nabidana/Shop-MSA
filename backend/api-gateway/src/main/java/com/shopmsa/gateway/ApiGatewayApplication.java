@@ -25,6 +25,20 @@ public class ApiGatewayApplication {
 	* application.yml에서 정의하는 것을 권장하지만,
 	* 복잡한 로직이 필요한 경우 여기서 정의 가능
 	*/
+    @Bean
+    RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+            .route("user-service", r -> r
+                .path("/api/users/**")
+                .filters(f -> f
+                    .stripPrefix(0)
+                    .retry(c -> c.setRetries(3))
+                )
+                .uri("http://localhost:8081")
+            )
+            .build();
+    }
+    
 	// @Bean
     // RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
     //     return builder.routes()

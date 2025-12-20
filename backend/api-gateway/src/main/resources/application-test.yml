@@ -12,25 +12,25 @@ spring:
           predicates:
             - Path=/api/users/**
         
-        - id: payment-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/payments/**
+        # - id: payment-service
+        #   uri: http://localhost:8082
+        #   predicates:
+        #     - Path=/api/payments/**
         
-        - id: settlement-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/api/settlements/**
+        # - id: settlement-service
+        #   uri: http://localhost:8083
+        #   predicates:
+        #     - Path=/api/settlements/**
         
-        - id: partner-service
-          uri: http://localhost:8084
-          predicates:
-            - Path=/api/partners/**
+        # - id: partner-service
+        #   uri: http://localhost:8084
+        #   predicates:
+        #     - Path=/api/partners/**
         
-        - id: accounting-service
-          uri: http://localhost:8085
-          predicates:
-            - Path=/api/accounting/**
+        # - id: accounting-service
+        #   uri: http://localhost:8085
+        #   predicates:
+        #     - Path=/api/accounting/**
 
 logging:
   level:
