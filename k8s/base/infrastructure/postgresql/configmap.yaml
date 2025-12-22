@@ -13,30 +13,63 @@ data:
     
     # 각 서비스별 데이터베이스 생성
     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-        -- User Service Database
+        -- DB 생성
         CREATE DATABASE userdb;
-        CREATE USER userservice WITH ENCRYPTED PASSWORD 'userservice_password';
-        GRANT ALL PRIVILEGES ON DATABASE userdb TO userservice;
-        
-        -- Payment Service Database
         CREATE DATABASE paymentdb;
-        CREATE USER paymentservice WITH ENCRYPTED PASSWORD 'paymentservice_password';
-        GRANT ALL PRIVILEGES ON DATABASE paymentdb TO paymentservice;
-        
-        -- Settlement Service Database
         CREATE DATABASE settlementdb;
-        CREATE USER settlementservice WITH ENCRYPTED PASSWORD 'settlementservice_password';
-        GRANT ALL PRIVILEGES ON DATABASE settlementdb TO settlementservice;
-        
-        -- Partner Service Database
         CREATE DATABASE partnerdb;
-        CREATE USER partnerservice WITH ENCRYPTED PASSWORD 'partnerservice_password';
-        GRANT ALL PRIVILEGES ON DATABASE partnerdb TO partnerservice;
-        
-        -- Accounting Service Database
         CREATE DATABASE accountingdb;
+
+        -- 사용자 생성
+        CREATE USER userservice WITH ENCRYPTED PASSWORD 'userservice_password';
+        CREATE USER paymentservice WITH ENCRYPTED PASSWORD 'paymentservice_password';
+        CREATE USER settlementservice WITH ENCRYPTED PASSWORD 'settlementservice_password';
+        CREATE USER partnerservice WITH ENCRYPTED PASSWORD 'partnerservice_password';
         CREATE USER accountingservice WITH ENCRYPTED PASSWORD 'accountingservice_password';
-        GRANT ALL PRIVILEGES ON DATABASE accountingdb TO accountingservice;
+
+        -- userdb 권한 부여
+      GRANT ALL PRIVILEGES ON DATABASE userdb TO userservice;
+      \c userdb
+      GRANT ALL ON SCHEMA public TO userservice;
+      GRANT CREATE ON SCHEMA public TO userservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO userservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO userservice;
+      
+      -- paymentdb 권한 부여
+      \c postgres
+      GRANT ALL PRIVILEGES ON DATABASE paymentdb TO paymentservice;
+      \c paymentdb
+      GRANT ALL ON SCHEMA public TO paymentservice;
+      GRANT CREATE ON SCHEMA public TO paymentservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO paymentservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO paymentservice;
+      
+      -- settlementdb 권한 부여
+      \c postgres
+      GRANT ALL PRIVILEGES ON DATABASE settlementdb TO settlementservice;
+      \c settlementdb
+      GRANT ALL ON SCHEMA public TO settlementservice;
+      GRANT CREATE ON SCHEMA public TO settlementservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO settlementservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO settlementservice;
+      
+      -- partnerdb 권한 부여
+      \c postgres
+      GRANT ALL PRIVILEGES ON DATABASE partnerdb TO partnerservice;
+      \c partnerdb
+      GRANT ALL ON SCHEMA public TO partnerservice;
+      GRANT CREATE ON SCHEMA public TO partnerservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO partnerservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO partnerservice;
+      
+      -- accountingdb 권한 부여
+      \c postgres
+      GRANT ALL PRIVILEGES ON DATABASE accountingdb TO accountingservice;
+      \c accountingdb
+      GRANT ALL ON SCHEMA public TO accountingservice;
+      GRANT CREATE ON SCHEMA public TO accountingservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO accountingservice;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO accountingservice;
     EOSQL
     
     echo "All databases created successfully!"

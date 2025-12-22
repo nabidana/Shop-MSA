@@ -90,6 +90,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+			<version>5.0.0</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus -->
 		<!-- Micrometer의 Prometheus용 MeterRegistry의 구현체로 수집한 메트릭을 Prometheus에서 
@@ -97,25 +98,36 @@
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>1.16.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/io.micrometer/micrometer-tracing-bridge-brave -->
 		<!-- 분산추적을 위한 라이브러리로 장애추적, 성능최적화, 모니터링-->
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+			<version>1.6.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation -->
 		<!-- 스프링 부트에서 제공하는 유효성 검사 기능 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+			<version>4.0.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-configuration-processor -->
 		<!-- 빌드 시점에 설정 클래스를 생성해주는 어노테이션 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
+			<version>4.0.1</version>
 			<optional>true</optional>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webflux-ui -->
+		<!-- SWAGEER - GATEWAY용 -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 		<!-- <dependency>
 			<groupId>org.springframework.boot</groupId>

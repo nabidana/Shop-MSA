@@ -53,6 +53,26 @@ spring:
                     firstBackoff: 100ms
                     maxBackoff: 500ms
                     factor: 2
+            # Payment Service (중요 서비스)
+            - id: payment-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - StripPrefix=0
+                - name: CircuitBreaker
+                  args:
+                    name: paymentServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/payment-service
+                - name: Retry
+                  args:
+                    retries: 2 # 결제는 멱등성 보장이 어려우므로 재시도 줄임
+                    statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+                    methods: GET # POST는 중복 결제 위험으로 제외
+                    backoff:
+                      firstBackoff: 200ms
+                      maxBackoff: 1000ms
+                      factor: 2
             # HTTP 클라이언트 설정
             httpclient:
               connect-timeout: 3000
@@ -61,27 +81,6 @@ spring:
                 type: ELASTIC
                 max-idle-time: 30s
                 max-life-time: 60s
-        
-        # # Payment Service (중요 서비스)
-        # - id: payment-service
-        #   uri: http://localhost:8082
-        #   predicates:
-        #     - Path=/api/payments/**
-        #   filters:
-        #     - StripPrefix=0
-        #     - name: CircuitBreaker
-        #       args:
-        #         name: paymentServiceCircuitBreaker
-        #         fallbackUri: forward:/fallback/payment-service
-        #     - name: Retry
-        #       args:
-        #         retries: 2 # 결제는 멱등성 보장이 어려우므로 재시도 줄임
-        #         statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-        #         methods: GET # POST는 중복 결제 위험으로 제외
-        #         backoff:
-        #           firstBackoff: 200ms
-        #           maxBackoff: 1000ms
-        #           factor: 2
         
         # # Settlement Service
         # - id: settlement-service
@@ -232,6 +231,26 @@ resilience4j:
     instances:
       paymentCircuitBreaker:
         timeoutDuration: 5s
+
+#Swagger 설정
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    use-root-path: true
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+    - name: User Service
+      url: /v3/api-docs/user-service
+    # - name: Payment Service
+    #   url: /v3/api-docs/payment-service
+    # - name: Settlement Service
+    #   url: /v3/api-docs/settlement-service
+    # - name: Partner Service
+    #   url: /v3/api-docs/partner-service
+    # - name: Accounting Service
+    #   url: /v3/api-docs/accounting-service
 
 # 로깅 설정
 logging:

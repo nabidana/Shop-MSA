@@ -40,6 +40,16 @@ management:
       export:
         enabled: true
 
+#swagger 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  #   operations-sorter: method
+  #   tags-sorter: alpha
+  # show-actuator: false
+
 logging:
   level:
     root: INFO

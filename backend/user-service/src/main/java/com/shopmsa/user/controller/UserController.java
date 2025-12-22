@@ -17,6 +17,12 @@ import com.shopmsa.user.dto.UserRequest;
 import com.shopmsa.user.dto.UserResponse;
 import com.shopmsa.user.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +31,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "User", description = "사용자 관리 API")
 public class UserController {
     private final UserService userService;
     
     /**
      * 사용자 생성
      */
+    @Operation(
+        summary = "사용자 생성",
+        description = "새로운 사용자를 생성합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "사용자 생성 성공",
+                content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "409", description = "중복된 사용자")
+    })
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
         log.info("POST /api/users - Creating user: {}", request.getUsername());
