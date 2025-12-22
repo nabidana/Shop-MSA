@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.shopmsa</groupId>
-	<artifactId>user-service</artifactId>
+	<artifactId>payment-service</artifactId>
 	<version>0.0.1</version>
-	<name>user-service</name>
-	<description>User Service from Shop Msa Service</description>
+	<name>payment-service</name>
+	<description>Payment Service from Shop Msa Service</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -30,58 +30,41 @@
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
-		<!-- 웹 애플리케이션(RESTful 웹 서비스 포함) 핵심 의존성-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa -->
-		<!-- 스프링 부트용 Spring Data Jpa 추상화 라이브러리-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
-		<!-- PostgreSQL JDBC 드라이버 -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>42.7.8</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-redis -->
-		<!-- Redis 데이터베이스를 쉽고 빠르게 연동하고 사용할 수 있도록 도와주는 의존성 라이브러리 모음 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka -->
-		<!-- 아파치 카프카(Apache Kafka)를 스프링(Spring) 프레임워크 환경에서 훨씬 쉽고 효율적으로 
-		연동하고 사용할 수 있도록 도와주는 라이브러리 -->
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation -->
-		<!-- 스프링 부트에서 제공하는 유효성 검사 기능 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-actuator -->
-		<!-- 스프링부트 애플리케이션의 모니터링이나
-		매트릭기능을 HTTP와 JXM의 엔드포인트를 통해 제공 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>

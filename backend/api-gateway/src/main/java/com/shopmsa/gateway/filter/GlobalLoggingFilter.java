@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -58,6 +59,16 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
         
         // 요청 로깅
         long startTime = System.currentTimeMillis();
+
+        // beforeCommit에서 Response Header 추가 (committed 되기 전)
+        mutatedExchange.getResponse().beforeCommit(() -> {
+            ServerHttpResponse response = mutatedExchange.getResponse();
+            response.getHeaders().add(REQUEST_ID_HEADER, requestId);
+            response.getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+            response.getHeaders().add("X-Response-Time", (System.currentTimeMillis() - startTime) + "ms");
+            return Mono.empty();
+        });
+
         log.info(">>> Incoming Request: {} {} | Request-ID: {} | Correlation-ID: {} | Client-IP: {}",
                 request.getMethod(),
                 request.getURI(),
@@ -66,20 +77,32 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
                 getClientIp(request));
         
         // Response에도 ID 추가 및 응답 로깅
-        return chain.filter(mutatedExchange).then(Mono.fromRunnable(() -> {
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
+        // return chain.filter(mutatedExchange).then(Mono.fromRunnable(() -> {
+        //     long endTime = System.currentTimeMillis();
+        //     long duration = endTime - startTime;
             
-            mutatedExchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId);
-            mutatedExchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+        //     mutatedExchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId);
+        //     mutatedExchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
             
-            log.info("<<< Outgoing Response: {} {} | Status: {} | Duration: {}ms | Request-ID: {}",
-                    request.getMethod(),
-                    request.getURI(),
-                    mutatedExchange.getResponse().getStatusCode(),
-                    duration,
-                    requestId);
-        }));
+        //     log.info("<<< Outgoing Response: {} {} | Status: {} | Duration: {}ms | Request-ID: {}",
+        //             request.getMethod(),
+        //             request.getURI(),
+        //             mutatedExchange.getResponse().getStatusCode(),
+        //             duration,
+        //             requestId);
+        // }));
+        // ✅ doFinally는 로깅만 수행 (Header 추가 안함)
+        return chain.filter(mutatedExchange)
+            .doFinally(signalType -> {
+                long duration = System.currentTimeMillis() - startTime;
+                log.info("<<< Outgoing Response: {} {} | Status: {} | Duration: {}ms | Request-ID: {} | Signal: {}",
+                        request.getMethod(),
+                        request.getURI(),
+                        mutatedExchange.getResponse().getStatusCode(),
+                        duration,
+                        requestId,
+                        signalType);
+        });
     }
 
     /**

@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgresql.shop-msa.svc.cluster.local:5432/paymentdb
+    username: paymentservice
+    password: test_payment_password
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  
+  data:
+    redis:
+      host: redis-master.shop-msa.svc.cluster.local
+      port: 6379
+      timeout: 3000ms
+  
+  kafka:
+    bootstrap-servers: kafka.shop-msa.svc.cluster.local:9092
+
+logging:
+  level:
+    root: INFO
+    "[com.shop.payment]": DEBUG

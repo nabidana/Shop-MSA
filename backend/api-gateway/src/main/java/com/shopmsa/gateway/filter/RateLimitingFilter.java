@@ -14,6 +14,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Redis 기반 Rate Limiting 필터
@@ -32,6 +33,9 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
     // Rate Limit 윈도우 (1분)
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
 
+    // Redis 연결 타임아웃 (2초)
+    private static final Duration REDIS_TIMEOUT = Duration.ofSeconds(2);
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -40,6 +44,7 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
         
         return redisTemplate.opsForValue()
                 .increment(rateLimitKey)
+                .timeout(REDIS_TIMEOUT)  // ✅ 타임아웃 2초 설정
                 .flatMap(count -> {
                     // 첫 요청인 경우 TTL 설정
                     if (count == 1) {
@@ -48,6 +53,11 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
                     }
                     
                     return processRequest(exchange, chain, count);
+                })
+                .onErrorResume(TimeoutException.class, error -> {
+                    // ✅ 타임아웃 발생 시
+                    log.warn("Rate limiting timeout for IP: {} - allowing request", clientIp);
+                    return chain.filter(exchange);
                 })
                 .onErrorResume(error -> {
                     // Redis 오류 시 요청 허용 (Fail-Open)
@@ -58,11 +68,18 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
 
     private Mono<Void> processRequest(ServerWebExchange exchange, GatewayFilterChain chain, Long count) {
         ServerHttpResponse response = exchange.getResponse();
-        
+        // ✅ beforeCommit에서 Response Header 추가
+        response.beforeCommit(() -> {
+            response.getHeaders().add("X-Rate-Limit-Limit", String.valueOf(MAX_REQUESTS_PER_MINUTE));
+            response.getHeaders().add("X-Rate-Limit-Remaining", 
+                    String.valueOf(Math.max(0, MAX_REQUESTS_PER_MINUTE - count)));
+            return Mono.empty();
+        });
+
         // Response 헤더에 Rate Limit 정보 추가
-        response.getHeaders().add("X-Rate-Limit-Limit", String.valueOf(MAX_REQUESTS_PER_MINUTE));
-        response.getHeaders().add("X-Rate-Limit-Remaining", 
-                String.valueOf(Math.max(0, MAX_REQUESTS_PER_MINUTE - count)));
+        // response.getHeaders().add("X-Rate-Limit-Limit", String.valueOf(MAX_REQUESTS_PER_MINUTE));
+        // response.getHeaders().add("X-Rate-Limit-Remaining", 
+        //         String.valueOf(Math.max(0, MAX_REQUESTS_PER_MINUTE - count)));
         
         // Rate Limit 초과 시 429 응답
         if (count > MAX_REQUESTS_PER_MINUTE) {

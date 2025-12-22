@@ -1,17 +1,42 @@
 spring:
+  # redis:
+  #   sentinel:
+  #     master: mymaster
+  #     nodes:
+  #     - localhost:26379
+  #   timeout: 3000ms
+  #   lettuce:
+  #     pool:
+  #       max-active: 8
+  #       max-idle: 8
+  #       min-idle: 0
   data:
     redis:
-      host: localhost
-      port: 6379
+      sentinel:
+        master: mymaster
+        nodes:
+        - localhost:26379
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
   cloud:
     gateway:
-      routes:
-        - id: user-service
-          uri: http://localhost:8081
-          predicates:
+      # routes:
+      # - id: user-service
+      #   uri: http://localhost:8081
+      #   predicates:
+      #   - Path=/api/users/**
+      server:
+        webflux:
+          routes:
+          - id: user-service
+            uri: http://localhost:8081
+            predicates:
             - Path=/api/users/**
-        
         # - id: payment-service
         #   uri: http://localhost:8082
         #   predicates:
@@ -36,3 +61,12 @@ logging:
   level:
     root: INFO
     "[com.payment.gateway]": DEBUG
+    "[io.lettuce.core]": DEBUG
+    "[io.lettuce.core.protocol]": DEBUG
+    "[io.lettuce.core.cluster]": DEBUG
+    # "[org.springframework.data.redis]": DEBUG
+    # "[org.springframework.data.redis.connection]": DEBUG
+    # "[org.springframework.data.redis.connection.lettuce]": DEBUG
+    # "[io.netty]": DEBUG
+    # "[io.netty.handler.logging]": DEBUG
+    # "[org.springframework.boot.autoconfigure]": DEBUG

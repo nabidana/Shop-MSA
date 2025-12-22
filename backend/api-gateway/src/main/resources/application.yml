@@ -9,40 +9,58 @@ spring:
     active: test
   
   # Redis Sentinel 설정
-  # data:
-  #   redis:
-  #     sentinel:
-  #       master: mymaster
-  #       nodes:
-  #         - redis-sentinel-0.redis-sentinel.shop-msa.svc.cluster.local:26379
-  #     password: ${REDIS_PASSWORD:}
-  #     timeout: 3000ms
+  data:
+    redis:
+      sentinel:
+        master: mymaster
+        nodes:
+          - redis-sentinel-0.redis-sentinel.shop-msa.svc.cluster.local:26379
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
   
   # Spring Cloud Gateway 라우팅 설정
   # 현재 왜인지 동작안하므로 config 직접설정
+  # -> PREFIX 가 바뀜
+  # PREFIX = "spring.cloud.gateway.server.webflux"
   cloud:
-  #   gateway:
-  #     routes:
-  #       # User Service
-  #       - id: user-service
-  #         uri: http://localhost:8081
-  #         predicates:
-  #           - Path=/api/users/**
-  #         filters:
-  #           - StripPrefix=0
-  #           - name: CircuitBreaker
-  #             args:
-  #               name: userServiceCircuitBreaker
-  #               fallbackUri: forward:/fallback/user-service
-  #           - name: Retry
-  #             args:
-  #               retries: 3
-  #               statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
-  #               methods: GET,POST,PUT,DELETE
-  #               backoff:
-  #                 firstBackoff: 100ms
-  #                 maxBackoff: 500ms
-  #                 factor: 2
+      gateway:
+        server:
+          webflux:
+            routes:
+            - id: user-service
+              uri:
+                http://localhost:8081
+              predicates:
+              - Path=/api/users/**
+              filters:
+              - StripPrefix=0
+              - name: CircuitBreaker
+                args:
+                  name: userServiceCircuitBreaker
+                  fallbackUri: forward:/fallback/user-service
+              - name: Retry
+                args:
+                  retries: 3
+                  statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+                  methods: GET,POST,PUT,DELETE
+                  backoff:
+                    firstBackoff: 100ms
+                    maxBackoff: 500ms
+                    factor: 2
+            # HTTP 클라이언트 설정
+            httpclient:
+              connect-timeout: 3000
+              response-timeout: 10s
+              pool:
+                type: ELASTIC
+                max-idle-time: 30s
+                max-life-time: 60s
         
         # # Payment Service (중요 서비스)
         # - id: payment-service
@@ -143,15 +161,6 @@ spring:
       #       allowedHeaders: "*"
       #       allowCredentials: true
       #       maxAge: 3600
-      
-      # HTTP 클라이언트 설정
-      httpclient:
-        connect-timeout: 3000
-        response-timeout: 10s
-        pool:
-          type: ELASTIC
-          max-idle-time: 30s
-          max-life-time: 60s
 
 # Actuator 설정 (Health Check, Metrics)
 management:
