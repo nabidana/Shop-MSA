@@ -25,6 +25,20 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
 
+# TEST - CORS
+management:
+  endpoints:
+    web:
+      cors:
+        allowed-origins:
+        - http://localhost:8080
+        - http://localhost:8081
+        allowed-methods:
+          - "*"
+        allowed-headers:
+          - "*"
+        allow-credentials: true
+
 logging:
   level:
     root: INFO

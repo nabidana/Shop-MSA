@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgresql.shop-msa.svc.cluster.local:5432/settlementdb
+    username: settlementservice
+    password: ${DB_PASSWORD:prod_settlement_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: false
+  
+  data:
+    redis:
+      host: redis-master.shop-msa.svc.cluster.local
+      port: 6379
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+  
+  kafka:
+    bootstrap-servers: kafka.shop-msa.svc.cluster.local:9092
+    producer:
+      acks: all
+      retries: 5
+      compression-type: lz4
+
+logging:
+  level:
+    root: WARN
+    "[com.shop.user]": INFO
+    "[org.springframework.web]": INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/user-service/application.log
+    max-size: 10MB
+    max-history: 30

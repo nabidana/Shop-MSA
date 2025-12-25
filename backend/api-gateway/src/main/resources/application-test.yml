@@ -33,6 +33,12 @@ spring:
       server:
         webflux:
           routes:
+          - id : user-service-api-docs
+            uri: http://localhost:8081
+            predicates:
+            - Path=/v3/api-docs/user-service
+            filters:
+            - RewritePath=/v3/api-docs/user-service, /v3/api-docs
           - id: user-service
             uri: http://localhost:8081
             predicates:

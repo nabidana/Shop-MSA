@@ -7,8 +7,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: create-drop
-      # ddl-auto: update
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -17,6 +16,7 @@ spring:
         "[use_sql_comments]": true
   
   kafka:
+    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -46,9 +46,9 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-  #   operations-sorter: method
-  #   tags-sorter: alpha
-  # show-actuator: false
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
 
 logging:
   level:
